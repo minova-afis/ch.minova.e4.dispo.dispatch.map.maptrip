@@ -276,6 +276,9 @@ public class MapControl implements IMapControl {
 			if (event.getKey().equals(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY)) {
 				geocodeIgnoreQuality = Boolean.parseBoolean((String) event.getNewValue());
 			}
+			if (event.getKey().equals(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE)) {
+				geocodeIgnoreQualityValue = Integer.parseInt((String) event.getNewValue());
+			}
 			if (event.getKey().equals(PreferenceIDs.MAP_RESET)) {
 				if (extracted) {
 					parent.getDisplay().asyncExec(new Runnable() {
@@ -719,6 +722,7 @@ public class MapControl implements IMapControl {
 	// private Map<Point, DistortionLine> distortionLines = new HashMap<Point,
 	// MapControl.DistortionLine>();
 	private boolean geocodeIgnoreQuality = false;
+	private Integer geocodeIgnoreQualityValue = 90;
 	private boolean showAllocatedShipments;
 
 	//
@@ -777,6 +781,8 @@ public class MapControl implements IMapControl {
 		distortionDistance = mapPrefsNode.getInt(PreferenceIDs.MAPDISTORTION_DISTANCE, 25);
 		geocodeIgnoreQuality = mapPrefsNode.getBoolean(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY,
 				geocodeIgnoreQuality);
+		geocodeIgnoreQualityValue = mapPrefsNode.getInt(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE,
+				geocodeIgnoreQualityValue);
 		registry.put(TRUCK_IMAGE, Activator.getImageRegistry().getDescriptor(MapImageConstants.MAPIMAGES_TRUCK));
 		registry.put(DEPOT_IMAGE, Activator.getImageRegistry().getDescriptor(MapImageConstants.MAPIMAGES_DEPOT));
 
@@ -1870,7 +1876,7 @@ public class MapControl implements IMapControl {
 				// 2.1 es ein eindeutiger Hit ist, aber die Qualität zu schlecht
 				// 2.2 es mehrere Treffer gibt
 				if (geo.size() == 0 || (!geocodeIgnoreQuality
-						&& ((geo.size() == 1 && geo.get(0).getHitProbability() < 90) || geo.size() > 1))) {
+						&& ((geo.size() == 1 && geo.get(0).getHitProbability() < geocodeIgnoreQualityValue) || geo.size() > 1))) {
 					// Keiner oder mutliple Treffer
 					// Form anzeigen
 					inSearchMode = true;
