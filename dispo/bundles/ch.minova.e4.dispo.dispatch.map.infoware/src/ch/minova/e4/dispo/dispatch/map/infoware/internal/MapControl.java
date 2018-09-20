@@ -1101,7 +1101,6 @@ public class MapControl implements IMapControl {
 	}
 
 	public void redrawMapImages(final boolean changed) {
-		Log.info(this, MessageFormat.format("redrawMap: {0}", changed));
 		this.viewpointChanged = changed;
 		// Wenn wir das Rechteck ziehen, wollen wir eigentlich zoomen und müssen
 		// erstmal nix mit den Bildern machen,
