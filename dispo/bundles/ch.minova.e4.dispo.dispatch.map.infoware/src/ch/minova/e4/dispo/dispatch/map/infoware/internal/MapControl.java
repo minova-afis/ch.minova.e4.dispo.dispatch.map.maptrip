@@ -323,6 +323,20 @@ public class MapControl implements IMapControl {
 					Rectangle client = map.getClientArea();
 					viewpointChanged = true;
 					controller.setClientArea(client.width, client.height);
+					int widthMap = client.width;
+					int heightMap = client.height;
+					boolean resizeMap = false;
+					if (widthMap > 1920) {
+						widthMap = 1920;
+						resizeMap = true;
+					}
+					if (heightMap > 1080) {
+						heightMap = 1080;
+						resizeMap = true;
+					}
+					if (resizeMap) {
+						map.setSize(widthMap, heightMap);
+					}
 					redrawMap(true);
 				} else {
 					Display.getDefault().syncExec(this);
