@@ -90,6 +90,10 @@ import ch.minova.dispo.dispatch.map.core.IProjectionsController;
 import ch.minova.dispo.dispatch.map.core.IRoutingController;
 import ch.minova.dispo.dispatch.model.DispoModelCache;
 import ch.minova.dispo.dispatch.model.IGeocoded;
+import ch.minova.dispo.dispatch.model.consumption.StationTankQuantityCalculator;
+import ch.minova.dispo.dispatch.model.dto.Address;
+import ch.minova.dispo.dispatch.model.dto.OpenDeliveryBean;
+import ch.minova.dispo.dispatch.model.dto.Remarks;
 import ch.minova.dispo.dispatch.model.dto.Shipment;
 import ch.minova.dispo.dispatch.model.dto.Trip;
 import ch.minova.dispo.dispatch.model.dto.TruckPool;
@@ -672,7 +676,7 @@ public class MapControl implements IMapControl {
 	@Optional
 	private IRoutingController routing; // FIXME und wenn keiner da ist?
 
-	private TranslationService service;
+	private TranslationService translationService;
 
 	private Shell infoShell;
 
@@ -794,7 +798,7 @@ public class MapControl implements IMapControl {
 
 	public void createMap(Composite parentComposite, TranslationService service, boolean extractable, boolean showToolbar) {
 		this.parentComposite = parentComposite;
-		this.service = service;
+		this.translationService = service;
 		this.parent = new Composite(parentComposite, SWT.NONE);
 		GridLayout gridLayout = new GridLayout(1, false);
 		this.parent.setLayout(gridLayout);
@@ -874,7 +878,7 @@ public class MapControl implements IMapControl {
 	@Override
 	public void createMap(Composite parentComposite, TranslationService service, boolean extractable) {
 		this.parentComposite = parentComposite;
-		this.service = service;
+		this.translationService = service;
 		this.parent = new Composite(parentComposite, SWT.NONE);
 		GridLayout gridLayout = new GridLayout(1, false);
 		this.parent.setLayout(gridLayout);
@@ -912,7 +916,7 @@ public class MapControl implements IMapControl {
 			Point parentSize = parent.getSize();
 			shell = new Shell(parent.getDisplay(), SWT.BORDER | SWT.CLOSE | SWT.MIN | SWT.MAX | SWT.RESIZE);
 			shell.setLayout(new FillLayout());
-			shell.setText(service.translate("@Dispo.Dispatch.Group.Map", null));
+			shell.setText(translationService.translate("@Dispo.Dispatch.Group.Map", null));
 			shell.setImage(Activator.getImageRegistry().get(MapImageConstants.MAPIMAGES_MAP));
 			Composite container = new Composite(shell, SWT.NONE);
 			GridLayout layout = new GridLayout();
@@ -1443,13 +1447,11 @@ public class MapControl implements IMapControl {
 	@Override
 	public void addImage(IDepotPosition value) {
 		mapImages.add(value);
-
 	}
 
 	@Override
 	public void addImage(ITruckPosition value) {
 		mapImages.add(value);
-
 	}
 
 	@Override
@@ -1653,10 +1655,17 @@ public class MapControl implements IMapControl {
 
 			int totalQuantity = 0;
 			for (IInfoProvider prov : infoProviders) {
+
 				TableItem item = new TableItem(infoTable, SWT.NONE);
 				Boolean allocated = (Boolean) prov.getInfos().get(ShipmentInfos.ALLOCATED.name());
 				if (allocated) {
 					item.setImage(Activator.getImageRegistry().get(MapImageConstants.MAPIMAGES_TRUCK_SMALL));
+				}
+				Object o = prov.getInfos().get("");
+				if (o instanceof Shipment) {
+					Shipment shipment = ((Shipment) o);
+					prov.getInfos().put(ShipmentInfos.ADDRESS.name(), shipment.getAddressInfo());
+					prov.getInfos().put(ShipmentInfos.TOOLTIP_TEXT.name(), getToolTipInfo(shipment));
 				}
 				int i = 0;
 				for (ShipmentInfos infos : ShipmentInfos.getShownInfos()) {
@@ -1684,8 +1693,8 @@ public class MapControl implements IMapControl {
 				item.setData(ShipmentInfos.TOOLTIP_TEXT.name(), prov.getInfos().get(ShipmentInfos.TOOLTIP_TEXT.name()));
 			}
 
-			infoTable.getColumn(0).setText(
-					service.translate(ShipmentInfos.QUANTITY.getTranslationID(), null) + ": " + NumberFormat.getIntegerInstance().format(totalQuantity));
+			infoTable.getColumn(0).setText(translationService.translate(ShipmentInfos.QUANTITY.getTranslationID(), null) + ": "
+					+ NumberFormat.getIntegerInstance().format(totalQuantity));
 
 			for (TableColumn tc : infoTable.getColumns()) {
 				tc.pack();
@@ -1788,6 +1797,147 @@ public class MapControl implements IMapControl {
 		}
 	}
 
+	private static String getNonEmptyStringOrNull(Object o) {
+		return o == null ? null : (o.toString().trim().isEmpty() ? null : o.toString().trim());
+	}
+
+	private static String getProductText(OpenDeliveryBean shipment, ch.minova.e4.ui.preferences.Preference pref) {
+		String prod = null;
+		// FIXME pref abfragen
+		if ("ShowProductDescription".equals(pref)) {
+			String prodDesc = shipment.getItemDescription();
+			if (prodDesc != null && prodDesc.trim().length() > 0) {
+				prod = prodDesc;
+			} else {
+				// Wohl leer, nehmen wir den Matchcode
+				prod = shipment.getItem().getKeyText();
+			}
+		} else {
+			prod = shipment.getItem().getKeyText();
+		}
+		return prod;
+	}
+
+	/**
+	 * Diese Methode liefert die ToolTipInfos zu dem ausgewählten Objekt auf der Karte: Es werden folgende Informationen angezeigt: Address.Address
+	 * Address.Address2 Address.Street, Address.Streetnumber Address.PostalCode Address.City Consignee.keyText Shipment.Quantity,Item.keyText,
+	 * Shipment.ValidFrom - Shipment.ValidUntil,Shipment.TimeFrom - Shipment.TimeUntil,
+	 * 
+	 * @param shipment
+	 * @return
+	 */
+	private Object getToolTipInfo(OpenDeliveryBean shipment) {
+		StringBuilder builder = new StringBuilder();
+		Address address = shipment.getConsignee().getContact().getAddress();
+
+		builder.append(address.getAddress());
+		builder.append("\r\n");
+		String address2 = getNonEmptyStringOrNull(address.getAddress2());
+		if (address2 != null) {
+			builder.append(address2).append("\r\n");
+		}
+		String street = address.getStreet();
+		if (street != null) {
+			builder.append(street);
+			if (address.getStreetnumber() != null) {
+				builder.append(" ");
+				builder.append(address.getStreetnumber());
+			}
+			builder.append("\r\n");
+		}
+		builder.append(address.getPostalCode());
+		builder.append(" ");
+		builder.append(address.getCity());
+		builder.append("\r\n");
+		builder.append(translationService.translate("tCustomer", null));
+		builder.append(": ");
+		builder.append(shipment.getConsignee().getKeyText());
+		builder.append("\r\n");
+
+		Integer quantity;
+		if (shipment.isShipment()) {
+			quantity = ((Shipment) shipment).getQuantity();
+		} else {
+			quantity = StationTankQuantityCalculator.getPossibleDeliveryQuantity(shipment, scheduledDate);
+		}
+		builder.append(quantity);
+
+		builder.append(", ");
+		builder.append(getProductText(shipment, null)); // TODO pref
+		builder.append(", ");
+		if (shipment.getValidFrom() != null) {
+			builder.append(ValueFormatter.toString(ValueFormatType.SHORT_DATE, shipment.getValidFrom().toLocalDate(), null));
+			builder.append(" - ");
+		}
+		if (shipment.getValidUntil() != null) {
+			builder.append(ValueFormatter.toString(ValueFormatType.SHORT_DATE, shipment.getValidUntil().toLocalDate(), null));
+		}
+
+		if (shipment.isShipment()) {
+			if (((Shipment) shipment).getTimeFrom() != null) {
+				builder.append(", ");
+				builder.append(ValueFormatter.toString(ValueFormatType.SHORT_TIME, ((Shipment) shipment).getTimeFrom(), null));
+				builder.append(" - ");
+			}
+			if (((Shipment) shipment).getTimeUntil() != null) {
+				if (((Shipment) shipment).getTimeFrom() == null) {
+					builder.append(", ");
+				}
+				builder.append(ValueFormatter.toString(ValueFormatType.SHORT_TIME, ((Shipment) shipment).getTimeUntil(), null));
+			}
+		}
+
+		//DispoRemarks werden im 11er Stand aus den Deliveries geholt!
+		if (shipment.getDelivery() != null && shipment.getDelivery().getRemarks() != null) {
+			Remarks remarks = shipment.getDelivery().getRemarks();
+			if (remarks.getRemarks() != null && !remarks.getRemarks().isEmpty()) {
+				// DispoRemarks
+				builder.append("\r\n");
+				builder.append(remarks.getRemarks());
+			}
+			if (remarks.getInternalRemarks() != null && !remarks.getInternalRemarks().isEmpty()) {
+				builder.append("\r\n");
+				builder.append(remarks.getInternalRemarks());
+			}
+		}
+
+		if (shipment.isShipment()) {
+			if (((Shipment) shipment).getTruck() != null && ((Shipment) shipment).getTrip() != null) {
+				builder.append("\r\n");
+				builder.append(translationService.translate("tTruck", null));
+				builder.append(": ");
+				builder.append(((Shipment) shipment).getTruck().getVehicle().getKeyText());
+				builder.append("\r\n");
+				builder.append(translationService.translate("tTrip", null));
+				builder.append(": ");
+				builder.append(((Shipment) shipment).getTrip().getKeyText());
+				if (shipment.getScheduledDate() != null) {
+					builder.append(" / ");
+					builder.append(ValueFormatter.toString(ValueFormatType.SHORT_DATE, shipment.getScheduledDate(), null));
+				}
+			}
+			if (((Shipment) shipment).getPricePerUnit() != null) {
+				builder.append("\r\n");
+				builder.append(translationService.translate("tOrder.Price", null));
+				builder.append(": ");
+				builder.append(NumberFormat.getCurrencyInstance().format(((Shipment) shipment).getPricePerUnit()));
+			}
+		}
+
+		// nur für SuK
+		// if (shipment.getPackageQuantity() != null) {
+		// builder.append("\r\n");
+		// builder.append(Messages.getString("tItem.PackageQuantity"));
+		// builder.append(": ");
+		// NumberFormat nf = NumberFormat.getInstance();
+		// nf.setMinimumFractionDigits(3);
+		// nf.setMaximumFractionDigits(3);
+		// builder.append(nf.format(shipment.getPackageQuantity()));
+		// }
+
+		return builder.toString();
+	}
+
 	private List<ITruckPosition> getTrucksFromPixel(int pixelx, int pixely) {
 		List<ITruckPosition> trucks = new LinkedList<ITruckPosition>();
 		int minx, maxx, miny, maxy;
@@ -1815,7 +1965,7 @@ public class MapControl implements IMapControl {
 
 	private void createColumn(Table table, ShipmentInfos info) {
 		TableColumn tc = new TableColumn(table, SWT.NONE);
-		tc.setText(service.translate(info.getTranslationID(), null));
+		tc.setText(translationService.translate(info.getTranslationID(), null));
 	}
 
 	@Override
@@ -1854,7 +2004,8 @@ public class MapControl implements IMapControl {
 						public void run() {
 							// API sagt, sollten wir so machen...
 							if (!map.isDisposed()) {
-								addressDialog = new FindAddressDialog(map.getShell(), MapControl.this, service, geoCoder, FindAddressDialog.DIALOG_TAKEOVER);
+								addressDialog = new FindAddressDialog(map.getShell(), MapControl.this, translationService, geoCoder,
+										FindAddressDialog.DIALOG_TAKEOVER);
 								addressDialog.create();
 								addressDialog.setAddress(a);
 								addressDialog.setResult(geo);
@@ -2029,7 +2180,7 @@ public class MapControl implements IMapControl {
 			List<IGeocodedAddress> geo = this.geoCoder.geocodeAddress(address);
 
 			inSearchMode = true;
-			addressDialog = new FindAddressDialog(parent, this, this.service, this.geoCoder, FindAddressDialog.DIALOG_TAKEOVER);
+			addressDialog = new FindAddressDialog(parent, this, this.translationService, this.geoCoder, FindAddressDialog.DIALOG_TAKEOVER);
 			addressDialog.create();
 			addressDialog.setAddress(address);
 			addressDialog.setResult(geo);
