@@ -484,6 +484,18 @@ public class MapControl implements IMapControl {
 		}
 	}
 
+	private class ImageOnMap {
+		Image image;
+		int x;
+		int y;
+
+		private ImageOnMap(Image i, int x, int y) {
+			this.image = i;
+			this.x = x;
+			this.y = y;
+		}
+	}
+
 	/**
 	 * {@link PaintListener}, der alle Zeichenoperationen der Karte ausführt.
 	 * 
@@ -492,35 +504,51 @@ public class MapControl implements IMapControl {
 	private class MapPaintListener implements PaintListener {
 		private boolean breakOut = false;
 		private boolean painting = false;
+		private Image mapImage;
+		private MapViewPointController mVC;
+
 		// Initial mal mit leeren Listen und Maps füllen
 		public MapImages images = new MapImages(new LinkedList<IGeocoded>(), new HashMap<Point, MapControl.DistortionLine>(), new HashMap<IGeocoded, Point>());
 
 		@Override
 		public void paintControl(PaintEvent e) {
+//			if (painting || mVC == null || mVC.getImage() == null) {
 			if (painting) {
 				return;
 			}
 			painting = true;
+
+//			Image newImage = new Image(h.gc.getDevice(), map.getBounds());
+//			GC igc = new GC(newImage);
+//			igc.setBackground(h.gc.getBackground());
+//			igc.setForeground(h.gc.getForeground());
+//			igc.drawImage(mVC.getImage(), 0, 0);
+
 			try {
 				TruckPosition.reset();
 				if (rectangle != null) {
 					map.setBackgroundImage(backroundImage);
 					e.gc.setForeground(colorBlack);
+//					igc.setForeground(colorBlack);
 					if (useRectangle) {
 						e.gc.drawRectangle(rectangle);
+//						igc.drawRectangle(rectangle);
 					} else {
 						e.gc.drawFocus(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+//						igc.drawFocus(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 					}
 					return;
 				}
 				if (!images.distortionLines.isEmpty()) {
 					for (DistortionLine line : images.distortionLines.values()) {
 						line.draw(e.gc);
+//						line.draw(igc);
 					}
 				}
 				if (!images.images.isEmpty()) {
 					// Beugt gelegentlichen ConcurrentModificationExceptions vor...
 					IGeocoded[] pics = images.images.toArray(new IGeocoded[images.images.size()]);
+					List<ImageOnMap> mapImages = new ArrayList<>();
 					for (IGeocoded geo : pics) {
 						if (breakOut) {
 							takeShot(e.gc);
@@ -551,10 +579,12 @@ public class MapControl implements IMapControl {
 										}
 										if (geocodedImage.getDecorator() != null) {
 											geocodedImage.getDecorator().draw(e.gc, point.x, point.y);
+//											geocodedImage.getDecorator().draw(igc, point.x, point.y);
 										}
 										Image image = geocodedImage.getImage();
 										Rectangle rec = image.getBounds();
-										e.gc.drawImage(image, (point.x - (rec.width / 2)), (point.y - (rec.height / 2)));
+										mapImages.add(new ImageOnMap(image, (point.x - (rec.width / 2)), (point.y - (rec.height / 2))));
+//										e.gc.drawImage(image, (point.x - (rec.width / 2)), (point.y - (rec.height / 2)));
 									}
 								}
 							} else if (geo instanceof GeocodedImageLocator) {
@@ -563,7 +593,8 @@ public class MapControl implements IMapControl {
 								Rectangle bounds = image.getBounds();
 								Point locator = controller.getPixelfromMercator(geo.getMercatorX(), geo.getMercatorY());
 								images.imagePoints.put(geo, locator);
-								e.gc.drawImage(image, locator.x - (bounds.width / 2), locator.y - (bounds.height / 2));
+								mapImages.add(new ImageOnMap(image, locator.x - (bounds.width / 2), locator.y - (bounds.height / 2)));
+//								e.gc.drawImage(image, locator.x - (bounds.width / 2), locator.y - (bounds.height / 2));
 							} else if (geo instanceof ITruckPosition) {
 								if (trucksSelected == true) {
 									ITruckPosition truck = (ITruckPosition) geo;
@@ -579,8 +610,10 @@ public class MapControl implements IMapControl {
 									int centerx = locator.x - (bounds.width / 2);
 									int centery = locator.y - (bounds.height / 2);
 									truck.getDecorator().draw(e.gc, locator.x, locator.y);
+//									truck.getDecorator().draw(igc, locator.x, locator.y);
 									// Zum Schluss das Bild
-									e.gc.drawImage(image, centerx, centery);
+									mapImages.add(new ImageOnMap(image, centerx, centery));
+//									e.gc.drawImage(image, centerx, centery);
 								}
 							} else if (geo instanceof IDepotPosition) {
 								if (tdepotsSelected == true) {
@@ -597,23 +630,36 @@ public class MapControl implements IMapControl {
 									int centerx = locator.x - (bounds.width / 2);
 									int centery = locator.y - (bounds.height / 2);
 									depot.getDecorator().draw(e.gc, locator.x, locator.y);
+//									depot.getDecorator().draw(igc, locator.x, locator.y);
 									// Zum Schluss das Bild
-									e.gc.drawImage(image, centerx, centery);
+									mapImages.add(new ImageOnMap(image, centerx, centery));
+//									e.gc.drawImage(image, centerx, centery);
 								}
 							} else if (geo instanceof GeocodedLocator) {
 								Color locColor = new Color(e.display, locatorRGB);
+//								igc.setForeground(locColor);
 								e.gc.setForeground(locColor);
 								Point locator = controller.getPixelfromMercator(geo.getMercatorX(), geo.getMercatorY());
 								images.imagePoints.put(geo, locator);
 								e.gc.drawOval(locator.x - (locatorSize / 2), locator.y - (locatorSize / 2), locatorSize, locatorSize);
+//								igc.drawOval(locator.x - (locatorSize / 2), locator.y - (locatorSize / 2), locatorSize, locatorSize);
+								locColor.dispose();
 							}
 						} else if (geo instanceof GeocodedImageProvider) {
 							// nein, das könnten wir auch noch mal malen
 							// ((GeocodedImageProvider) geo).dispose();
 						}
 					}
+					// Wir malen alles auf einmal
+					for (ImageOnMap imageOnMap : mapImages) {
+//						igc.drawImage(imageOnMap.image, imageOnMap.x, imageOnMap.y);
+						e.gc.drawImage(imageOnMap.image, imageOnMap.x, imageOnMap.y);
+					}
 					// Einmal durchgelaufen setzen wir das Flag wieder um
 					breakOut = false;
+//					h.gc.copyArea(newImage, 0, 0);
+//					e.gc.dispose();
+//					igc.dispose();
 				}
 				if (rectangle == null) {
 
@@ -636,6 +682,22 @@ public class MapControl implements IMapControl {
 			// map.removePaintListener(paintListener);
 			gc.copyArea(backroundImage, 0, 0);
 			// map.addPaintListener(paintListener);
+		}
+
+		public Image getMapImage() {
+			return mapImage;
+		}
+
+		public void setMapImage(Image mapImage) {
+			this.mapImage = mapImage;
+		}
+
+		public MapViewPointController getmVC() {
+			return mVC;
+		}
+
+		public void setmVC(MapViewPointController mVC) {
+			this.mVC = mVC;
 		}
 	}
 
@@ -800,6 +862,7 @@ public class MapControl implements IMapControl {
 		this.parentComposite = parentComposite;
 		this.translationService = service;
 		this.parent = new Composite(parentComposite, SWT.NONE);
+//		this.parent = new Composite(parentComposite, SWT.NO_BACKGROUND);
 		GridLayout gridLayout = new GridLayout(1, false);
 		this.parent.setLayout(gridLayout);
 
@@ -812,6 +875,7 @@ public class MapControl implements IMapControl {
 			parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		}
 
+//		map = new Canvas(parent, SWT.NO_BACKGROUND);
 		map = new Canvas(parent, SWT.NONE);
 		map.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
@@ -820,6 +884,7 @@ public class MapControl implements IMapControl {
 		controller = new MapViewPointController(this);
 		// context.getParent().set(MapViewPointController.class, controller);
 		adapter = new MapControlMouseAdapter(this, controller);
+//		paintListener.setmVC(controller);
 		// jetzt sind wir fertig - inject ganz oben, um die Helper zu informieren
 		// das wird jetzt an eine andere Stelle gesetzt als es ursprünglich lag, es ist
 		// aber dasselbe Objekt
@@ -880,11 +945,13 @@ public class MapControl implements IMapControl {
 		this.parentComposite = parentComposite;
 		this.translationService = service;
 		this.parent = new Composite(parentComposite, SWT.NONE);
+//		this.parent = new Composite(parentComposite, SWT.NO_BACKGROUND);
 		GridLayout gridLayout = new GridLayout(1, false);
 		this.parent.setLayout(gridLayout);
 
 		parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
+//		map = new Canvas(parent, SWT.NO_BACKGROUND);
 		map = new Canvas(parent, SWT.NONE);
 
 		map.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -892,6 +959,7 @@ public class MapControl implements IMapControl {
 		map.addControlListener(new MapResizeListener(parentComposite.getShell()));
 		map.addPaintListener(paintListener);
 		controller = new MapViewPointController(this);
+//		paintListener.setmVC(controller);
 		context.getParent().set(MapViewPointController.class, controller);
 		adapter = new MapControlMouseAdapter(this, controller);
 		if (extractable && initialExtracted) {
@@ -1140,19 +1208,7 @@ public class MapControl implements IMapControl {
 	 */
 	protected void redrawMap(final boolean changed, final String trip) {
 		tripKeyStr = trip;
-		this.viewpointChanged = changed;
-		// Wenn wir das Rechteck ziehen, wollen wir eigentlich zoomen und müssen
-		// erstmal nix mit den Bildern machen,
-		// bis wir einen erneuten Redraw bekommen!
-		if (rectangle == null) {
-			// Wir machen synchron eine Kopie der Liste, die wir anschließend
-			// Vorbearbeiten
-			List<IGeocoded> images = new CopyOnWriteArrayList<IGeocoded>(mapImages);
-
-			paintListener.breakOut = true;
-			paintListener.images = preprocessImages(images);
-		}
-
+		redrawMapImages(changed);
 		if (!map.isDisposed()) {
 			map.getDisplay().syncExec(new Runnable() {
 				@Override
@@ -1455,6 +1511,13 @@ public class MapControl implements IMapControl {
 	}
 
 	@Override
+	public void setImages(List<IGeocoded> images) {
+		if (images != null) {
+			mapImages = images;
+		}
+	}
+
+	@Override
 	public void clearImages() {
 		mapImages.clear();
 	}
@@ -1618,7 +1681,7 @@ public class MapControl implements IMapControl {
 						// TODO hier muss noch die Tour rausgefiltert werdern
 						Integer shipmentKey = (Integer) item.getData();
 						Shipment shipment = DispoModelCache.getInstance().getShipment(shipmentKey);
-						if (shipment.getTrip() != null) {
+						if (shipment != null && shipment.getTrip() != null) {
 							broker.post(DispoDispatchEventTopics.DISPATCH_SHOW_TRIP, shipment.getTrip());
 							broker.post(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, shipment.getTrip());
 							context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRUCK, shipment.getTrip().getTruck().getVehicle());
@@ -1887,7 +1950,7 @@ public class MapControl implements IMapControl {
 			}
 		}
 
-		//DispoRemarks werden im 11er Stand aus den Deliveries geholt!
+		// DispoRemarks werden im 11er Stand aus den Deliveries geholt!
 		if (shipment.getDelivery() != null && shipment.getDelivery().getRemarks() != null) {
 			Remarks remarks = shipment.getDelivery().getRemarks();
 			if (remarks.getRemarks() != null && !remarks.getRemarks().isEmpty()) {
