@@ -1193,7 +1193,7 @@ public class MapControl implements IMapControl {
 	 */
 	@Override
 	public void redrawMap(final boolean changed, final boolean async) {
-		System.out.println("redrawMap " + changed + " " + ++counter);
+		System.out.println(System.currentTimeMillis() + " redrawMap " + async + " " + ++counter);
 		redrawMapImages(changed);
 		if (!map.isDisposed()) {
 			Runnable runnable = new Runnable() {
