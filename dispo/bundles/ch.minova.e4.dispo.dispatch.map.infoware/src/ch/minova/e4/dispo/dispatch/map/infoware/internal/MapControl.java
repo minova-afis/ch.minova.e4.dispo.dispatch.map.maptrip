@@ -110,13 +110,13 @@ import ch.minova.e4.dispo.dispatch.map.control.MapViewPointController;
 import ch.minova.e4.dispo.dispatch.map.dialogs.FindAddressDialog;
 import ch.minova.e4.dispo.dispatch.map.preferences.PreferenceIDs;
 import ch.minova.e4.dispo.dispatch.map.ui.Activator;
+import ch.minova.e4.dispo.dispatch.map.ui.BufferedDisplay;
 import ch.minova.e4.dispo.dispatch.map.ui.IDepotPosition;
 import ch.minova.e4.dispo.dispatch.map.ui.IImageFilter;
 import ch.minova.e4.dispo.dispatch.map.ui.IMapControl;
 import ch.minova.e4.dispo.dispatch.map.ui.IMapSelectionListener;
 import ch.minova.e4.dispo.dispatch.map.ui.ITruckPosition;
 import ch.minova.e4.dispo.dispatch.map.ui.MapImageConstants;
-import ch.minova.e4.ui.controller.BufferedDisplay;
 import ch.minova.e4.ui.preferences.Preference;
 import ch.minova.ncore.data.ValueFormatType;
 import ch.minova.ncore.data.form.ValueFormatter;
@@ -1224,7 +1224,7 @@ public class MapControl implements IMapControl {
 			};
 
 			if (async) {
-				BufferedDisplay.getDefault().asyncExec("redrawMap", runnable, 1000);
+				BufferedDisplay.getDefault().asyncExec("redrawMap", runnable, 100);
 			} else {
 				map.getDisplay().asyncExec(runnable);
 			}
