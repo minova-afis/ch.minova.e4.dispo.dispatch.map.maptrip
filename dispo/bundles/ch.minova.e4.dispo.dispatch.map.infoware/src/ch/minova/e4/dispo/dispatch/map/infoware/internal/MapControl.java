@@ -110,13 +110,13 @@ import ch.minova.e4.dispo.dispatch.map.control.MapViewPointController;
 import ch.minova.e4.dispo.dispatch.map.dialogs.FindAddressDialog;
 import ch.minova.e4.dispo.dispatch.map.preferences.PreferenceIDs;
 import ch.minova.e4.dispo.dispatch.map.ui.Activator;
-import ch.minova.e4.dispo.dispatch.map.ui.BufferedDisplay;
 import ch.minova.e4.dispo.dispatch.map.ui.IDepotPosition;
 import ch.minova.e4.dispo.dispatch.map.ui.IImageFilter;
 import ch.minova.e4.dispo.dispatch.map.ui.IMapControl;
 import ch.minova.e4.dispo.dispatch.map.ui.IMapSelectionListener;
 import ch.minova.e4.dispo.dispatch.map.ui.ITruckPosition;
 import ch.minova.e4.dispo.dispatch.map.ui.MapImageConstants;
+import ch.minova.e4.ui.controller.BufferedDisplay;
 import ch.minova.e4.ui.preferences.Preference;
 import ch.minova.ncore.data.ValueFormatType;
 import ch.minova.ncore.data.form.ValueFormatter;
@@ -808,14 +808,16 @@ public class MapControl implements IMapControl {
 	private final MapPaintListener paintListener = new MapPaintListener();
 	private boolean drawTrip;
 
-	public MapControl() {
-		init();
-	}
+	protected Boolean draw = false;
 
 	private String locatorRGBfirstPositionBackground;
 	private String locatorRGBfirstPositionForeground;
 	private String locatorRGBAllPositionBackground;
 	private String locatorRGBAllPositionForeground;
+
+	public MapControl() {
+		init();
+	}
 
 	@Override
 	public void init() {
@@ -1193,40 +1195,51 @@ public class MapControl implements IMapControl {
 	 */
 	@Override
 	public void redrawMap(final boolean changed, final boolean async) {
-		System.out.println(System.currentTimeMillis() + " redrawMap " + async + " " + ++counter);
-		redrawMapImages(changed);
-		if (!map.isDisposed()) {
-			Runnable runnable = new Runnable() {
-				@Override
-				public void run() {
-					System.out.println("really redrawMap " + ++acounter);
-					if (!map.isDisposed()) {
-						map.getShell().setCursor(map.getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
-						if (changed) {
-							// Wenn es eine Konkrete Shapedatei gibt, dann wird diese angezeigt.
-							if (tripKeyStr != null && !tripKeyStr.isEmpty()) {
-								controller.drawMapTrip(changed, tripKeyStr);
-							} else if (tripKey != 0) {
-								controller.drawMapTrip(changed, String.valueOf(tripKey));
-							} else {
-								controller.drawMap(changed);
-							}
+		Runnable runnable = new Runnable() {
+			@Override
+			public void run() {
+				if (!map.isDisposed()) {
+					map.getShell().setCursor(map.getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
+					if (changed) {
+						// Wenn es eine Konkrete Shapedatei gibt, dann wird diese angezeigt.
+						if (tripKeyStr != null && !tripKeyStr.isEmpty()) {
+							controller.drawMapTrip(changed, tripKeyStr);
+						} else if (tripKey != 0) {
+							controller.drawMapTrip(changed, String.valueOf(tripKey));
+						} else {
+							controller.drawMap(changed);
 						}
-						map.getShell().setCursor(null);
-						paintListener.breakOut = false;
-						Image backgroundImage = map.getBackgroundImage();
-						if (backgroundImage == null || backgroundImage.isDisposed()) {
-							controller.drawMap(true);
-						}
-						map.redraw();
+					}
+					map.getShell().setCursor(null);
+					paintListener.breakOut = false;
+					Image backgroundImage = map.getBackgroundImage();
+					if (backgroundImage == null || backgroundImage.isDisposed()) {
+						controller.drawMap(true);
+					}
+					map.redraw();
+
+					// erst wenn tatsächlich fertig gemalt wurde!
+					synchronized (draw) {
+						draw = false;
 					}
 				}
-			};
+			}
+		};
 
-			if (async) {
-				BufferedDisplay.getDefault().asyncExec("redrawMap", runnable, 100);
-			} else {
-				map.getDisplay().asyncExec(runnable);
+		if (!async) {
+			redrawMapImages(changed);
+			map.getDisplay().asyncExec(runnable);
+		} else {
+			synchronized (this.draw) {
+				if (!this.draw) {
+					this.draw = true;
+
+					if (!map.isDisposed()) {
+						redrawMapImages(changed);
+						BufferedDisplay.getDefault().asyncExec("drawMap", runnable, 3000);
+					}
+					// else es wird schon gezeichnet!
+				}
 			}
 		}
 	}
