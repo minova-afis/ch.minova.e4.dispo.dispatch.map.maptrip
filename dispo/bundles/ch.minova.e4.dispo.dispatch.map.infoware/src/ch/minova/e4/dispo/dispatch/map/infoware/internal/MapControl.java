@@ -1669,28 +1669,32 @@ public class MapControl implements IMapControl {
 						infoToolTip.setText((String) item.getData(ShipmentInfos.TOOLTIP_TEXT.name()));
 						infoToolTip.show(new Point(0, 0));
 					}
-					// hideShipmentInfos();
-					// showInfos(pixelx, pixely);
 				}
 			});
 			infoTable.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseDown(MouseEvent e) {
-					TableItem item = infoTable.getSelection()[0];
-					if (listener != null && item.getData() instanceof Integer) {
-						// TODO hier muss noch die Tour rausgefiltert werdern
-						Integer shipmentKey = (Integer) item.getData();
-						Shipment shipment = DispoModelCache.getInstance().getShipment(shipmentKey);
-						if (shipment != null && shipment.getTrip() != null) {
-							broker.post(DispoDispatchEventTopics.DISPATCH_SHOW_TRIP, shipment.getTrip());
-							broker.post(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, shipment.getTrip());
-							context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRUCK, shipment.getTrip().getTruck().getVehicle());
-							context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, null);
-							context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, shipment.getTrip());
-							context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_SELECT_TRIP, null);
-							context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_SELECT_TRIP, shipment.getTrip());
+					try {
+						TableItem item = infoTable.getSelection()[0];
+						if (listener != null && item.getData() instanceof Integer) {
+							// TODO hier muss noch die Tour rausgefiltert werdern
+							Integer shipmentKey = (Integer) item.getData();
+							Shipment shipment = DispoModelCache.getInstance().getShipment(shipmentKey);
+							if (shipment != null && shipment.getTrip() != null) {
+								broker.post(DispoDispatchEventTopics.DISPATCH_SHOW_TRIP, shipment.getTrip());
+								broker.post(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, shipment.getTrip());
+								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRUCK, shipment.getTrip().getTruck().getVehicle());
+								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, null);
+								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, shipment.getTrip());
+								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_SELECT_TRIP, null);
+								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_SELECT_TRIP, shipment.getTrip());
+							}
 						}
+					} catch (ArrayIndexOutOfBoundsException ex) {
+						Log.debug(this, "MouseDown: infottable disposed");
+						hideShipmentInfos();
 					}
+
 				}
 			});
 			infoTable.addKeyListener(new KeyAdapter() {
