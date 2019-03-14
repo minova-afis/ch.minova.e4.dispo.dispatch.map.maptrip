@@ -792,6 +792,7 @@ public class MapControl implements IMapControl {
 	private boolean geocodeIgnoreQuality = false;
 	private Integer geocodeIgnoreQualityValue = 90;
 	private boolean showAllocatedShipments;
+	private Integer maxShipmentsDispatchedInArea = 25;
 
 	//
 	private boolean showAllocatedforObject;
@@ -845,6 +846,7 @@ public class MapControl implements IMapControl {
 		distortionDistance = mapPrefsNode.getInt(PreferenceIDs.MAPDISTORTION_DISTANCE, 25);
 		geocodeIgnoreQuality = mapPrefsNode.getBoolean(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY, geocodeIgnoreQuality);
 		geocodeIgnoreQualityValue = mapPrefsNode.getInt(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE, geocodeIgnoreQualityValue);
+		maxShipmentsDispatchedInArea = mapPrefsNode.getInt(PreferenceIDs.MAP_MAX_SHIPMENTS_DISPATCHED_IN_AREA, maxShipmentsDispatchedInArea);
 		if (registry.get(TRUCK_IMAGE) == null) {
 			registry.put(TRUCK_IMAGE, Activator.getImageRegistry().getDescriptor(MapImageConstants.MAPIMAGES_TRUCK));
 		}
@@ -2209,6 +2211,12 @@ public class MapControl implements IMapControl {
 					shipments.add((Integer) found.getInfos().get(ShipmentInfos.ID.name()));
 				}
 			}
+		}
+		if (shipments.size() > maxShipmentsDispatchedInArea) {
+			Log.warnUser(this, MessageFormat.format(
+					"Vorgang wurde abgebrochen! Der Breich der disponiert werden soll enthält mehr als {0} Lieferungen. Bitte wählen Sie einen kleinen Bereich mit maximal: {0} Lieferungen aus!",
+					maxShipmentsDispatchedInArea),true);
+			return;
 		}
 		if (listener != null && !shipments.isEmpty()) {
 			listener.shipmentsSelected(shipments);
