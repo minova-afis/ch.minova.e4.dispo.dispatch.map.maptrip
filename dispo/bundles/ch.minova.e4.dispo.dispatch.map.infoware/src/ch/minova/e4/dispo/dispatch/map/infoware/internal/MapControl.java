@@ -1236,7 +1236,9 @@ public class MapControl implements IMapControl {
 
 					if (!map.isDisposed()) {
 						redrawMapImages(changed);
-						BufferedDisplay.getDefault().asyncExec("drawMap", runnable, 3000);
+						final IEclipsePreferences preferences = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID);
+						int delay = preferences.getInt(PreferenceIDs.DRAW_MAP_DELAY, 2000);
+						BufferedDisplay.getDefault().asyncExec("drawMap", runnable, delay);
 					}
 					// else es wird schon gezeichnet!
 				}
