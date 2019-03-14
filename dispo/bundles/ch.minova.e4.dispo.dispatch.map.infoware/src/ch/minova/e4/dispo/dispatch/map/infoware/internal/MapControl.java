@@ -1881,10 +1881,10 @@ public class MapControl implements IMapControl {
 		return o == null ? null : (o.toString().trim().isEmpty() ? null : o.toString().trim());
 	}
 
-	private static String getProductText(OpenDeliveryBean shipment, ch.minova.e4.ui.preferences.Preference pref) {
+	private static String getProductText(OpenDeliveryBean shipment, boolean showProductDescription) {
 		String prod = null;
-		// FIXME pref abfragen
-		if ("ShowProductDescription".equals(pref)) {
+
+		if (showProductDescription) {
 			String prodDesc = shipment.getItemDescription();
 			if (prodDesc != null && prodDesc.trim().length() > 0) {
 				prod = prodDesc;
@@ -1895,6 +1895,7 @@ public class MapControl implements IMapControl {
 		} else {
 			prod = shipment.getItem().getKeyText();
 		}
+
 		return prod;
 	}
 
@@ -1943,7 +1944,7 @@ public class MapControl implements IMapControl {
 		builder.append(quantity);
 
 		builder.append(", ");
-		builder.append(getProductText(shipment, null)); // TODO pref
+		builder.append(getProductText(shipment, Activator.isShowProductDescription()));
 		builder.append(", ");
 		if (shipment.getValidFrom() != null) {
 			builder.append(ValueFormatter.toString(ValueFormatType.SHORT_DATE, shipment.getValidFrom().toLocalDate(), null));
