@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Infoware Map Implementation Plug-In
 Bundle-SymbolicName: ch.minova.e4.dispo.dispatch.map.infoware;singleton:=true
-Bundle-Version: 11.0.0.qualifier
+Bundle-Version: 11.1.0.qualifier
 Bundle-Vendor: MINOVA Information Services GmbH
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy

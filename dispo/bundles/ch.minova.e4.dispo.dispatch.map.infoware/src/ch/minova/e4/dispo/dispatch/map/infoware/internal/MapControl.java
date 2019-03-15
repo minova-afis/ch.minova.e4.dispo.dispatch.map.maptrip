@@ -153,7 +153,7 @@ public class MapControl implements IMapControl {
 		/**
 		 * Die Bilder, die alle auf diesem Startpunkt liegen.
 		 */
-		private List<GeocodedImageProvider> providers = new LinkedList<GeocodedImageProvider>();
+		private List<GeocodedImageProvider> providers = new LinkedList<>();
 
 		/**
 		 * Jede Lieferung wird einem Index zugeordnet, an den sie dann gerendert wird
@@ -710,7 +710,7 @@ public class MapControl implements IMapControl {
 	private int locatorSize = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID).getInt(PreferenceIDs.MAP_LOCATOR_SIZE, 25);
 	private int locatorDuration = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID).getInt(PreferenceIDs.MAP_LOCATOR_DISPLAY_TIME, 15);
 
-	private List<IGeocoded> mapImages = new CopyOnWriteArrayList<IGeocoded>();
+	private List<IGeocoded> mapImages = new CopyOnWriteArrayList<>();
 	private RGB locatorRGB;
 	private String iconLocation;
 
@@ -809,15 +809,18 @@ public class MapControl implements IMapControl {
 	private final MapPaintListener paintListener = new MapPaintListener();
 	private boolean drawTrip;
 
-	public MapControl() {
-		init();
-	}
+	protected Boolean draw = false;
 
 	private String locatorRGBfirstPositionBackground;
 	private String locatorRGBfirstPositionForeground;
 	private String locatorRGBAllPositionBackground;
 	private String locatorRGBAllPositionForeground;
 
+	public MapControl() {
+		init();
+	}
+
+	@Override
 	public void init() {
 		// TODO können jetzt injected werden
 		IEclipsePreferences prefs = ConfigurationScope.INSTANCE.getNode(PreferenceIDs.MAP_PREFERENCES_CONTEXT);
@@ -860,6 +863,7 @@ public class MapControl implements IMapControl {
 		createMap(parentComposite, service, true);
 	}
 
+	@Override
 	public void createMap(Composite parentComposite, TranslationService service, boolean extractable, boolean showToolbar) {
 		this.parentComposite = parentComposite;
 		this.translationService = service;
@@ -1126,28 +1130,23 @@ public class MapControl implements IMapControl {
 				setTripKey(0);
 				setTripKeyStr(null);
 			}
+
 			// Zeichnen wenn geändert.
-			BufferedDisplay.getDefault().asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP_SHAPE, tripKeyStr);
-					redraw(tripKeyStr);
-				}
-			}, 20);
+			context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP_SHAPE, tripKeyStr);
+			redraw(tripKeyStr);
 		}
 	}
 
 	private void redrawIfAllocatedforObject() {
 		if (showAllocatedforObject) {
-			redrawMap(false);
+			redrawMap(false, true);
 		}
 	}
 
 	private void resetMap() {
 		shell.removeControlListener(extractionListener);
 		extracted = !reparentMap(parentComposite);
-		// extract.setToolTipText(service.translate("@Dispo.Dispatch.Tooltip.OpenMapWindow",
-		// null));
+		// extract.setToolTipText(service.translate("@Dispo.Dispatch.Tooltip.OpenMapWindow", null));
 		shell.dispose();
 		parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		controller.setMapDistanceByX(controller.getMapDistanceX());
@@ -1155,54 +1154,31 @@ public class MapControl implements IMapControl {
 		redrawMap(true);
 	}
 
+	@Override
 	public void redrawMapImages(final boolean changed) {
 		this.viewpointChanged = changed;
 		// Wenn wir das Rechteck ziehen, wollen wir eigentlich zoomen und müssen
 		// erstmal nix mit den Bildern machen,
 		// bis wir einen erneuten Redraw bekommen!
 		if (rectangle == null) {
-			// Wir machen synchron eine Kopie der Liste, die wir anschließend
-			// Vorbearbeiten
-			List<IGeocoded> images = new CopyOnWriteArrayList<IGeocoded>(mapImages);
+			// Wir machen synchron eine Kopie der Liste, die wir anschließend vorbearbeiten
+			List<IGeocoded> images = new CopyOnWriteArrayList<>(mapImages);
 
 			paintListener.breakOut = true;
 			paintListener.images = preprocessImages(images);
 		}
 	}
 
+	// TODO remove debug
+	static int counter = 0;
+	static int acounter = 0;
+
 	/**
 	 * Wird immer im UI-Thread aufgerufen!
 	 */
 	@Override
 	public void redrawMap(final boolean changed) {
-		redrawMapImages(changed);
-		if (!map.isDisposed()) {
-			map.getDisplay().asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					if (!map.isDisposed()) {
-						map.getShell().setCursor(map.getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
-						if (changed) {
-							// Wenn es eine Konkrete Shapedatei gibt, dann wird diese angezeigt.
-							if (tripKeyStr != null && !tripKeyStr.isEmpty()) {
-								controller.drawMapTrip(changed, tripKeyStr);
-							} else if (tripKey != 0) {
-								controller.drawMapTrip(changed, String.valueOf(tripKey));
-							} else {
-								controller.drawMap(changed);
-							}
-						}
-						map.getShell().setCursor(null);
-						paintListener.breakOut = false;
-						Image backgroundImage = map.getBackgroundImage();
-						if (backgroundImage == null || backgroundImage.isDisposed()) {
-							controller.drawMap(true);
-						}
-						map.redraw();
-					}
-				}
-			});
-		}
+		redrawMap(changed, false);
 	}
 
 	/**
@@ -1210,22 +1186,65 @@ public class MapControl implements IMapControl {
 	 */
 	protected void redrawMap(final boolean changed, final String trip) {
 		tripKeyStr = trip;
-		redrawMapImages(changed);
-		if (!map.isDisposed()) {
-			map.getDisplay().syncExec(new Runnable() {
-				@Override
-				public void run() {
-					if (!map.isDisposed()) {
-						map.getShell().setCursor(map.getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
-						if (changed) {
-							controller.drawMapTrip(changed, trip);
+
+		// ab hier kann man wahrscheinlich die redrawMap(changed) von oben verwenden
+		redrawMap(changed, true);
+	}
+
+	/**
+	 * @author wild
+	 * @since 11.1.0
+	 */
+	@Override
+	public void redrawMap(final boolean changed, final boolean async) {
+		Runnable runnable = new Runnable() {
+			@Override
+			public void run() {
+				if (!map.isDisposed()) {
+					map.getShell().setCursor(map.getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
+					if (changed) {
+						// Wenn es eine Konkrete Shapedatei gibt, dann wird diese angezeigt.
+						if (tripKeyStr != null && !tripKeyStr.isEmpty()) {
+							controller.drawMapTrip(changed, tripKeyStr);
+						} else if (tripKey != 0) {
+							controller.drawMapTrip(changed, String.valueOf(tripKey));
+						} else {
+							controller.drawMap(changed);
 						}
-						map.getShell().setCursor(null);
-						paintListener.breakOut = false;
-						map.redraw();
+					}
+					map.getShell().setCursor(null);
+					paintListener.breakOut = false;
+					Image backgroundImage = map.getBackgroundImage();
+					if (backgroundImage == null || backgroundImage.isDisposed()) {
+						controller.drawMap(true);
+					}
+					map.redraw();
+
+					// erst wenn tatsächlich fertig gemalt wurde!
+					synchronized (draw) {
+						draw = false;
 					}
 				}
-			});
+			}
+		};
+
+		if (!async) {
+			redrawMapImages(changed);
+			map.getDisplay().asyncExec(runnable);
+		} else {
+			synchronized (this.draw) {
+				if (!this.draw) {
+					this.draw = true;
+
+					if (!map.isDisposed()) {
+						redrawMapImages(changed);
+						final IEclipsePreferences preferences = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID);
+						int delay = preferences.getInt(PreferenceIDs.DRAW_MAP_DELAY, 2000);
+						BufferedDisplay.getDefault().asyncExec("drawMap", runnable, delay);
+					}
+					// else es wird schon gezeichnet!
+				}
+			}
 		}
 	}
 
@@ -1233,11 +1252,11 @@ public class MapControl implements IMapControl {
 		Map<IGeocoded, Point> imagePoints = null;
 		if (viewpointChanged || paintListener.images == null) {
 			// Diese Punkte IMMER löschen, wenn sich der sichtbare Auschnitt ändert
-			imagePoints = new HashMap<IGeocoded, Point>();
+			imagePoints = new HashMap<>();
 		} else {
 			imagePoints = paintListener.images.imagePoints;
 		}
-		Map<Point, DistortionLine> distortionLines = new HashMap<Point, MapControl.DistortionLine>();
+		Map<Point, DistortionLine> distortionLines = new HashMap<>();
 		// Kartenpunkte rechnen
 		for (IGeocoded geo : mapImages) {
 			Point p = imagePoints.get(geo);
@@ -1321,10 +1340,10 @@ public class MapControl implements IMapControl {
 			// #32593 markiert die 1. Lieferposition in den Komplimentärfarben.
 			if (shipment.getTrip() != null) {
 				if (geo.getDecorator() != null) {
-					if (((Shipment) shipment).isfirstShipmentOfTrip()) {
+					if (shipment.isfirstShipmentOfTrip()) {
 						((TextDecorator) geo.getDecorator()).setBackground(getColorOfString(locatorRGBfirstPositionBackground));
 						((TextDecorator) geo.getDecorator()).setForeground(getColorOfString(locatorRGBfirstPositionForeground));
-					} else if (((Shipment) shipment).getTrip() != null) {
+					} else if (shipment.getTrip() != null) {
 						if (geo.getDecorator() != null) {
 							((TextDecorator) geo.getDecorator()).setBackground(getColorOfString(locatorRGBAllPositionBackground));
 							((TextDecorator) geo.getDecorator()).setForeground(getColorOfString(locatorRGBAllPositionForeground));
@@ -1344,7 +1363,7 @@ public class MapControl implements IMapControl {
 	 * @return
 	 */
 	public boolean checkShowGeo(GeocodedImageProvider geo) {
-		Object object = ((GeocodedImageProvider) geo).getInfos().get("SOURCE");
+		Object object = geo.getInfos().get("SOURCE");
 		if (object instanceof Shipment) {
 			Trip trip = ((Shipment) object).getTrip();
 			if (trip != null && trip.getScheduledDate().equals(scheduledDate)) {
@@ -1528,7 +1547,7 @@ public class MapControl implements IMapControl {
 	public void setTrucks(List<ITruckPosition> trucks) {
 		trucksSelected = true;
 		mapImages.addAll(trucks);
-		redrawMap(false);
+		redrawMap(false, true);
 	}
 
 	@Override
@@ -1555,7 +1574,7 @@ public class MapControl implements IMapControl {
 	}
 
 	private List<IInfoProvider> getShipmentsFromPixel(int pixelx, int pixely) {
-		List<IInfoProvider> shipments = new LinkedList<IInfoProvider>();
+		List<IInfoProvider> shipments = new LinkedList<>();
 		int minx, maxx, miny, maxy;
 		int hoverPixels = Activator.getHoverPixels();
 		minx = pixelx - hoverPixels;
@@ -1870,10 +1889,10 @@ public class MapControl implements IMapControl {
 		return o == null ? null : (o.toString().trim().isEmpty() ? null : o.toString().trim());
 	}
 
-	private static String getProductText(OpenDeliveryBean shipment, ch.minova.e4.ui.preferences.Preference pref) {
+	private static String getProductText(OpenDeliveryBean shipment, boolean showProductDescription) {
 		String prod = null;
-		// FIXME pref abfragen
-		if ("ShowProductDescription".equals(pref)) {
+
+		if (showProductDescription) {
 			String prodDesc = shipment.getItemDescription();
 			if (prodDesc != null && prodDesc.trim().length() > 0) {
 				prod = prodDesc;
@@ -1884,6 +1903,7 @@ public class MapControl implements IMapControl {
 		} else {
 			prod = shipment.getItem().getKeyText();
 		}
+
 		return prod;
 	}
 
@@ -1932,7 +1952,7 @@ public class MapControl implements IMapControl {
 		builder.append(quantity);
 
 		builder.append(", ");
-		builder.append(getProductText(shipment, null)); // TODO pref
+		builder.append(getProductText(shipment, Activator.isShowProductDescription()));
 		builder.append(", ");
 		if (shipment.getValidFrom() != null) {
 			builder.append(ValueFormatter.toString(ValueFormatType.SHORT_DATE, shipment.getValidFrom().toLocalDate(), null));
@@ -2008,7 +2028,7 @@ public class MapControl implements IMapControl {
 	}
 
 	private List<ITruckPosition> getTrucksFromPixel(int pixelx, int pixely) {
-		List<ITruckPosition> trucks = new LinkedList<ITruckPosition>();
+		List<ITruckPosition> trucks = new LinkedList<>();
 		int minx, maxx, miny, maxy;
 		int hoverPixels = Activator.getHoverPixels();
 		minx = pixelx - hoverPixels;
@@ -2054,7 +2074,7 @@ public class MapControl implements IMapControl {
 			addressDialog.close();
 			addressDialog = null;
 		}
-		final List<IGeocodedWithSource<E>> foundAddresses = new LinkedList<IGeocodedWithSource<E>>();
+		final List<IGeocodedWithSource<E>> foundAddresses = new LinkedList<>();
 		for (final E a : addresses) {
 			try {
 				final List<IGeocodedAddress> geo = geoCoder.geocodeAddress(a);
@@ -2080,7 +2100,7 @@ public class MapControl implements IMapControl {
 								addressDialog.setResult(geo);
 								int result = addressDialog.open();
 								if (result == IDialogConstants.OK_ID) {
-									GeocodableAddressWithSource<E> add = new GeocodableAddressWithSource<E>(a);
+									GeocodableAddressWithSource<E> add = new GeocodableAddressWithSource<>(a);
 									IGeocodedAddress add2 = addressDialog.getSelected();
 									if (add2 != null) {
 										add.setMercatorX(add2.getMercatorX());
@@ -2124,7 +2144,7 @@ public class MapControl implements IMapControl {
 					} else {
 						foundGeo = geo.get(0);
 					}
-					GeocodableAddressWithSource<E> add = new GeocodableAddressWithSource<E>(a);
+					GeocodableAddressWithSource<E> add = new GeocodableAddressWithSource<>(a);
 					add.setMercatorX(foundGeo.getMercatorX());
 					add.setMercatorY(foundGeo.getMercatorY());
 					add.setCoordinateX(foundGeo.getCoordinateX());
@@ -2187,7 +2207,7 @@ public class MapControl implements IMapControl {
 	@Override
 	public void getShipments(int x, int y, int x2, int y2) {
 		IInfoProvider found = null;
-		ArrayList<Integer> shipments = new ArrayList<Integer>();
+		ArrayList<Integer> shipments = new ArrayList<>();
 		for (IGeocoded geo : paintListener.images.imagePoints.keySet()) {
 			if (found == null && geo instanceof IInfoProvider) {
 				found = (IInfoProvider) geo;
@@ -2262,7 +2282,7 @@ public class MapControl implements IMapControl {
 			int retCode = addressDialog.open();
 			inSearchMode = false;
 			if (retCode == Dialog.OK) {
-				GeocodedAddressWithSource<IAddress> add = new GeocodedAddressWithSource<IAddress>(address);
+				GeocodedAddressWithSource<IAddress> add = new GeocodedAddressWithSource<>(address);
 				IGeocodedAddress add2 = addressDialog.getSelected();
 				if (add2 != null) {
 					add.setMercatorX(add2.getMercatorX());
@@ -2313,13 +2333,13 @@ public class MapControl implements IMapControl {
 	public void setShowAllocatedForObject(boolean show) {
 		this.showAllocatedforObject = show;
 		this.showAllocatedShipments = show;
-		redrawMap(false);
+		redrawMap(false, true);
 	}
 
 	@Override
 	public void setShowAllocated(boolean show) {
 		this.showAllocatedShipments = show;
-		redrawMap(false);
+		redrawMap(false, true);
 	}
 
 	@Override
@@ -2364,13 +2384,13 @@ public class MapControl implements IMapControl {
 	@Override
 	public void showDepot(boolean b) {
 		tdepotsSelected = b;
-		redrawMap(false);
+		redrawMap(false, true);
 	}
 
 	@Override
 	public void showVehicle(boolean b) {
 		trucksSelected = b;
-		redrawMap(false);
+		redrawMap(false, true);
 	}
 
 	@Override
@@ -2389,7 +2409,7 @@ public class MapControl implements IMapControl {
 			for (IGeocoded iGeocoded : mapImages) {
 				if (iGeocoded instanceof GeocodedImageProvider) {
 					if (((Integer) (((GeocodedImageProvider) iGeocoded).getInfos().get(ShipmentInfos.ID.name())))
-							.equals((Integer) prov.getInfos().get(ShipmentInfos.ID.name()))) {
+							.equals(prov.getInfos().get(ShipmentInfos.ID.name()))) {
 						mapImages.remove(iGeocoded);
 						return;
 					}
