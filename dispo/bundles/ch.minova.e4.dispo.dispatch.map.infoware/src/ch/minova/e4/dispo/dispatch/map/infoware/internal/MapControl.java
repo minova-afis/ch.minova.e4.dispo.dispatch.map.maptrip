@@ -120,6 +120,7 @@ import ch.minova.e4.ui.controller.BufferedDisplay;
 import ch.minova.e4.ui.preferences.Preference;
 import ch.minova.ncore.data.ValueFormatType;
 import ch.minova.ncore.data.form.ValueFormatter;
+import ch.minova.ncore.internationalization.Messages;
 import ch.minova.ncore.log.Log;
 import ch.minova.ncore.util.MessageFormat;
 
@@ -793,6 +794,7 @@ public class MapControl implements IMapControl {
 	private Integer geocodeIgnoreQualityValue = 90;
 	private boolean showAllocatedShipments;
 	private Integer maxShipmentsDispatchedInArea = 25;
+	private Integer drawMapDelay = 2000;
 
 	//
 	private boolean showAllocatedforObject;
@@ -850,6 +852,8 @@ public class MapControl implements IMapControl {
 		geocodeIgnoreQuality = mapPrefsNode.getBoolean(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY, geocodeIgnoreQuality);
 		geocodeIgnoreQualityValue = mapPrefsNode.getInt(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE, geocodeIgnoreQualityValue);
 		maxShipmentsDispatchedInArea = mapPrefsNode.getInt(PreferenceIDs.MAP_MAX_SHIPMENTS_DISPATCHED_IN_AREA, maxShipmentsDispatchedInArea);
+		drawMapDelay = mapPrefsNode.getInt(PreferenceIDs.DRAW_MAP_DELAY, 2000);
+		
 		if (registry.get(TRUCK_IMAGE) == null) {
 			registry.put(TRUCK_IMAGE, Activator.getImageRegistry().getDescriptor(MapImageConstants.MAPIMAGES_TRUCK));
 		}
@@ -1191,25 +1195,32 @@ public class MapControl implements IMapControl {
 		redrawMap(changed, true);
 	}
 
+	private Boolean changedmap = false;
+
 	/**
 	 * @author wild
 	 * @since 11.1.0
 	 */
 	@Override
 	public void redrawMap(final boolean changed, final boolean async) {
+
+		synchronized (changedmap) {
+			// Sobal wir es auf true setzen bleibt es ach so
+			changedmap |= changed;
+		}
 		Runnable runnable = new Runnable() {
 			@Override
 			public void run() {
 				if (!map.isDisposed()) {
 					map.getShell().setCursor(map.getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
-					if (changed) {
+					if (changedmap) {
 						// Wenn es eine Konkrete Shapedatei gibt, dann wird diese angezeigt.
 						if (tripKeyStr != null && !tripKeyStr.isEmpty()) {
-							controller.drawMapTrip(changed, tripKeyStr);
+							controller.drawMapTrip(changedmap, tripKeyStr);
 						} else if (tripKey != 0) {
-							controller.drawMapTrip(changed, String.valueOf(tripKey));
+							controller.drawMapTrip(changedmap, String.valueOf(tripKey));
 						} else {
-							controller.drawMap(changed);
+							controller.drawMap(changedmap);
 						}
 					}
 					map.getShell().setCursor(null);
@@ -1220,6 +1231,10 @@ public class MapControl implements IMapControl {
 					}
 					map.redraw();
 
+					// wieder zurücksetzen
+					synchronized (changedmap) {
+						changedmap = false;
+					}
 					// erst wenn tatsächlich fertig gemalt wurde!
 					synchronized (draw) {
 						draw = false;
@@ -1235,12 +1250,9 @@ public class MapControl implements IMapControl {
 			synchronized (this.draw) {
 				if (!this.draw) {
 					this.draw = true;
-
 					if (!map.isDisposed()) {
 						redrawMapImages(changed);
-						final IEclipsePreferences preferences = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID);
-						int delay = preferences.getInt(PreferenceIDs.DRAW_MAP_DELAY, 2000);
-						BufferedDisplay.getDefault().asyncExec("drawMap", runnable, delay);
+						BufferedDisplay.getDefault().asyncExec("drawMap", runnable, drawMapDelay);
 					}
 					// else es wird schon gezeichnet!
 				}
@@ -2233,9 +2245,9 @@ public class MapControl implements IMapControl {
 			}
 		}
 		if (shipments.size() > maxShipmentsDispatchedInArea) {
-			Log.warnUser(this, MessageFormat.format(
-					"Vorgang wurde abgebrochen! Der Breich der disponiert werden soll enthält mehr als {0} Lieferungen. Bitte wählen Sie einen kleinen Bereich mit maximal: {0} Lieferungen aus!",
-					maxShipmentsDispatchedInArea),true);
+			Log.warnUser(this, 
+					Messages.getFString("msg.DispoDispatchShipmentFromArea",
+							maxShipmentsDispatchedInArea),true);
 			return;
 		}
 		if (listener != null && !shipments.isEmpty()) {
