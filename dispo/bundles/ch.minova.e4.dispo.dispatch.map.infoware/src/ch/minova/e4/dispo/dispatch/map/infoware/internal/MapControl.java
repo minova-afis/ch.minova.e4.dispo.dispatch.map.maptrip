@@ -825,10 +825,9 @@ public class MapControl implements IMapControl {
 	@Override
 	public void init() {
 		// TODO können jetzt injected werden
-		IEclipsePreferences prefs = ConfigurationScope.INSTANCE.getNode(PreferenceIDs.MAP_PREFERENCES_CONTEXT);
-		IEclipsePreferences mapPrefsNode = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID);
+		IEclipsePreferences mapPrefsNode = ConfigurationScope.INSTANCE.getNode(Activator.PLUGIN_ID);
 		prefChange = new MapPreferencesListener();
-		prefs.addPreferenceChangeListener(prefChange);
+		mapPrefsNode.addPreferenceChangeListener(prefChange);
 		locatorRGBAllPositionForeground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_FOREGROUND_SHIPMENT_OF_TRIP, "255, 255, 255");
 		locatorRGBAllPositionBackground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_BACKGROUND_SHIPMENT_OF_TRIP, "0, 0, 128");
 		locatorRGBfirstPositionForeground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_FOREGROUND_FIRST_SHIPMENT_OF_TRIP, "255, 255, 255");
@@ -853,7 +852,7 @@ public class MapControl implements IMapControl {
 		geocodeIgnoreQualityValue = mapPrefsNode.getInt(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE, geocodeIgnoreQualityValue);
 		maxShipmentsDispatchedInArea = mapPrefsNode.getInt(PreferenceIDs.MAP_MAX_SHIPMENTS_DISPATCHED_IN_AREA, maxShipmentsDispatchedInArea);
 		drawMapDelay = mapPrefsNode.getInt(PreferenceIDs.DRAW_MAP_DELAY, 2000);
-		
+
 		if (registry.get(TRUCK_IMAGE) == null) {
 			registry.put(TRUCK_IMAGE, Activator.getImageRegistry().getDescriptor(MapImageConstants.MAPIMAGES_TRUCK));
 		}
@@ -1423,7 +1422,7 @@ public class MapControl implements IMapControl {
 		if (parent != null && !parent.isDisposed()) {
 			parent.dispose();
 		}
-		IEclipsePreferences prefs = ConfigurationScope.INSTANCE.getNode(PreferenceIDs.MAP_PREFERENCES_CONTEXT);
+		IEclipsePreferences prefs = ConfigurationScope.INSTANCE.getNode(Activator.PLUGIN_ID);
 		prefs.removePreferenceChangeListener(prefChange);
 		prefs.putInt(PreferenceIDs.MAP_LOCATION_X, extractedShellX);
 		prefs.putInt(PreferenceIDs.MAP_LOCATION_Y, extractedShellY);
@@ -2245,9 +2244,7 @@ public class MapControl implements IMapControl {
 			}
 		}
 		if (shipments.size() > maxShipmentsDispatchedInArea) {
-			Log.warnUser(this, 
-					Messages.getFString("msg.DispoDispatchShipmentFromArea",
-							maxShipmentsDispatchedInArea),true);
+			Log.warnUser(this, Messages.getFString("msg.DispoDispatchShipmentFromArea", maxShipmentsDispatchedInArea), true);
 			return;
 		}
 		if (listener != null && !shipments.isEmpty()) {
