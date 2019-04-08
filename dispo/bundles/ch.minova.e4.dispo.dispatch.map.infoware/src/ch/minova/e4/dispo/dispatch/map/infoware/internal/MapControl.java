@@ -1211,6 +1211,7 @@ public class MapControl implements IMapControl {
 			@Override
 			public void run() {
 				if (!map.isDisposed()) {
+					redrawMapImages(changedmap);
 					map.getShell().setCursor(map.getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
 					if (changedmap) {
 						// Wenn es eine Konkrete Shapedatei gibt, dann wird diese angezeigt.
@@ -1250,7 +1251,6 @@ public class MapControl implements IMapControl {
 				if (!this.draw) {
 					this.draw = true;
 					if (!map.isDisposed()) {
-						redrawMapImages(changed);
 						BufferedDisplay.getDefault().asyncExec("drawMap", runnable, drawMapDelay);
 					}
 					// else es wird schon gezeichnet!
