@@ -2177,11 +2177,8 @@ public class MapControl implements IMapControl {
 	@Override
 	public void getNearestShipment(int x, int y) {
 		IInfoProvider found = null;
-		int latest = -1;
+		int latest = 30; // das definiert automatisch den maximalen Wert TODO konfigurierbar
 		for (IGeocoded geo : paintListener.images.imagePoints.keySet()) {
-			if (found == null && geo instanceof IInfoProvider) {
-				found = (IInfoProvider) geo;
-			}
 			if (geo instanceof IInfoProvider) {
 				boolean allocated = (Boolean) ((IInfoProvider) geo).getInfos().get(ShipmentInfos.ALLOCATED.name());
 				if (allocated) {
@@ -2193,22 +2190,21 @@ public class MapControl implements IMapControl {
 					// Der ist eigentlich nicht sichtbar...
 					continue;
 				}
+
 				// Es werden die Koordinaten des Punktes von der Liste der
-				// Shipments auf der Karte zurückgegebn.
+				// Shipments auf der Karte zurückgegeben.
 				Point p = paintListener.images.imagePoints.get(geo);
-				// Berechnung der Disranz zu den Koordianten des aktuellen geo-Objektes
+				// Berechnung der Distanz zu den Koordianten des aktuellen geo-Objektes
 				int current = getAbsoluteDistance(p, x, y);
-				// Einmaliges setzen an 1. Stelle des Durchlaufes um einen Wert zu definieren
-				if (latest == -1) {
-					latest = current;
-				}
-				// Wenn aktueller Wert <= dem alten ist wird dieser umgesetzt.
+
+				// Wenn aktueller Wert <= dem alten ist wird dieser umgesetzt
 				if (current <= latest) {
 					latest = current;
 					found = (IInfoProvider) geo;
 				}
 			}
 		}
+
 		if (listener != null && found != null) {
 			IInfoProvider prov = found;
 			listener.shipmentDoubleClicked((Integer) prov.getInfos().get(ShipmentInfos.ID.name()));
@@ -2253,9 +2249,12 @@ public class MapControl implements IMapControl {
 	}
 
 	private int getAbsoluteDistance(Point p, int x, int y) {
-		int retx = Math.abs(p.x - x);
-		int rety = Math.abs(p.y - y);
-		return retx + rety;
+		// wir berechnen die Länge der Diagonale
+		int retx = p.x - x;
+		int rety = p.y - y;
+		double diagDouble = Math.sqrt((retx * retx) + (rety * rety));
+		int diagInt = (int) Math.round(diagDouble);
+		return diagInt;
 	}
 
 	@Override
