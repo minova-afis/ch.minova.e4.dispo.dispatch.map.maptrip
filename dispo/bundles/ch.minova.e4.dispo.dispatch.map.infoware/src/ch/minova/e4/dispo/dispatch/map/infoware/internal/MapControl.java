@@ -528,7 +528,7 @@ public class MapControl implements IMapControl {
 			try {
 				TruckPosition.reset();
 				if (rectangle != null) {
-					map.setBackgroundImage(backroundImage);
+					map.setBackgroundImage(backgroundImage);
 					e.gc.setForeground(colorBlack);
 //					igc.setForeground(colorBlack);
 					if (useRectangle) {
@@ -672,16 +672,16 @@ public class MapControl implements IMapControl {
 		}
 
 		private void takeShot(GC gc) {
-			if (backroundImage != null) {
-				backroundImage.dispose();
+			if (backgroundImage != null) {
+				backgroundImage.dispose();
 			}
 			if (map.getBounds().width == 0 && map.getBounds().height == 0) {
 				map.setBounds(map.getBounds().x, map.getBounds().y, 1, 1);
 			}
-			backroundImage = new Image(gc.getDevice(), map.getBounds());
+			backgroundImage = new Image(gc.getDevice(), map.getBounds());
 			// Dieses Problem hat nur Neon und MAC
 			// map.removePaintListener(paintListener);
-			gc.copyArea(backroundImage, 0, 0);
+			gc.copyArea(backgroundImage, 0, 0);
 			// map.addPaintListener(paintListener);
 		}
 
@@ -706,7 +706,7 @@ public class MapControl implements IMapControl {
 	private Composite parent;
 	private Canvas map;
 	private MapControlMouseAdapter adapter;
-	private Image backroundImage = null;
+	private Image backgroundImage = null;
 
 	private int locatorSize = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID).getInt(PreferenceIDs.MAP_LOCATOR_SIZE, 25);
 	private int locatorDuration = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID).getInt(PreferenceIDs.MAP_LOCATOR_DISPLAY_TIME, 15);
