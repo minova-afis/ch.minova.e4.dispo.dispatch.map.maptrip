@@ -27,6 +27,7 @@ import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.core.services.events.IEventBroker;
 import org.eclipse.e4.core.services.translation.TranslationService;
+import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.resource.ImageRegistry;
@@ -134,6 +135,10 @@ public class MapControl implements IMapControl {
 	// Standard immer 0
 	private int tripKey = 0;
 	private String tripKeyStr = "";
+	
+	@Inject
+	private
+	UISynchronize sync;
 
 	private Color getColorOfString(String rgb) {
 		RGB locatorRGB = ch.minova.e4.ui.preferences.Preference.asRGB(rgb);
@@ -2452,5 +2457,10 @@ public class MapControl implements IMapControl {
 	@Override
 	public void setInGeoCodeMode(boolean inGeoCodeMode) {
 		this.inGeoCodeMode = inGeoCodeMode;
+	}
+
+	@Override
+	public UISynchronize getUISynchronize() {
+		return sync;
 	}
 }
