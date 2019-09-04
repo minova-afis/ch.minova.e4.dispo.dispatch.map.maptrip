@@ -135,10 +135,9 @@ public class MapControl implements IMapControl {
 	// Standard immer 0
 	private int tripKey = 0;
 	private String tripKeyStr = "";
-	
+
 	@Inject
-	private
-	UISynchronize sync;
+	private UISynchronize sync;
 
 	private Color getColorOfString(String rgb) {
 		RGB locatorRGB = ch.minova.e4.ui.preferences.Preference.asRGB(rgb);
@@ -1527,7 +1526,11 @@ public class MapControl implements IMapControl {
 
 	@Override
 	public ICoordinates toWGS84(int mercatorX, int mercatorY) {
-		return projections.toWGS84(mercatorX, mercatorY);
+		if (this.projections == null) {
+			throw new RuntimeException("ProjectionsController not available");
+		} else {
+			return projections.toWGS84(mercatorX, mercatorY);
+		}
 	}
 
 	@Override
@@ -1576,7 +1579,11 @@ public class MapControl implements IMapControl {
 
 	@Override
 	public IGeocoded toMercator(double wgs84x, double wgs84y) {
-		return projections.toMercator(wgs84x, wgs84y);
+		if (this.projections == null) {
+			throw new RuntimeException("ProjectionsController not available");
+		} else {
+			return projections.toMercator(wgs84x, wgs84y);
+		}
 	}
 
 	@Override
