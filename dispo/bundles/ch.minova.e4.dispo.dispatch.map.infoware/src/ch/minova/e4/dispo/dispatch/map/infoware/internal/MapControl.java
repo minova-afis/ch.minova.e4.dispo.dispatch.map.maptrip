@@ -1272,18 +1272,17 @@ public class MapControl implements IMapControl {
 			Point p = imagePoints.get(geo);
 			if (p == null) {
 				// Kartenpunkt berechnen
-				// TODO Nullpointer abfangen
 				try {
 					if (controller.isInViewPort(geo.getMercatorX(), geo.getMercatorY())) {
 						p = controller.getPixelfromMercator(geo.getMercatorX(), geo.getMercatorY());
 						imagePoints.put(geo, p);
 					} else {
-						// liegt der Punkt ausserhalb des sichtbaren Bereichs, so
+						// liegt der Punkt außerhalb des sichtbaren Bereichs, so
 						// müssen wir ihn auch nicht zeichnen
 						continue;
 					}
-
 				} catch (NullPointerException ex) {
+					// Nullpointer abfangen, falls keine Koordinaten vorhanden sind
 					imagePoints.remove(geo);
 					continue;
 				}
@@ -1306,6 +1305,7 @@ public class MapControl implements IMapControl {
 					continue;
 				}
 			}
+
 			if (geo instanceof GeocodedImageProvider) {
 				handleGeocodedImageProvider((GeocodedImageProvider) geo);
 				GeocodedImageProvider prov = (GeocodedImageProvider) geo;
@@ -1321,7 +1321,7 @@ public class MapControl implements IMapControl {
 				}
 				if ((Boolean) prov.getInfos().get(ShipmentInfos.ALLOCATED.name()) && !showAllocatedShipments) {
 					// Das Shipment ist allocated und wir wollen es nicht
-					// anzeigen, also schmeissen wirs raus
+					// anzeigen, also schmeißen wirs raus
 					if (p != null) {
 						imagePoints.remove(geo);
 					}
@@ -1340,6 +1340,7 @@ public class MapControl implements IMapControl {
 				}
 			}
 		}
+
 		return new MapImages(mapImages, distortionLines, imagePoints);
 	}
 
