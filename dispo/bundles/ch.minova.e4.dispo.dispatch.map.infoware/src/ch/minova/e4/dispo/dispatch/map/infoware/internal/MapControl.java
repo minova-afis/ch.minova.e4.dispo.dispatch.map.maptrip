@@ -666,8 +666,8 @@ public class MapControl implements IMapControl {
 //					e.gc.dispose();
 //					igc.dispose();
 				}
-				if (rectangle == null) {
 
+				if (rectangle == null) {
 					takeShot(e.gc);
 				}
 			} finally {
@@ -727,7 +727,7 @@ public class MapControl implements IMapControl {
 
 	@Inject
 	@Optional
-	private IProjectionsController projections; // FIXME und wenn keiner da ist?
+	private IProjectionsController projections;
 
 	@Inject
 	private IEclipseContext context;
@@ -1176,10 +1176,6 @@ public class MapControl implements IMapControl {
 		}
 	}
 
-	// TODO remove debug
-	static int counter = 0;
-	static int acounter = 0;
-
 	/**
 	 * Wird immer im UI-Thread aufgerufen!
 	 */
@@ -1206,9 +1202,8 @@ public class MapControl implements IMapControl {
 	 */
 	@Override
 	public void redrawMap(final boolean changed, final boolean async) {
-
 		synchronized (changedmap) {
-			// Sobal wir es auf true setzen bleibt es ach so
+			// Sobald wir es auf true setzen bleibt es ach so
 			changedmap |= changed;
 		}
 		Runnable runnable = new Runnable() {
