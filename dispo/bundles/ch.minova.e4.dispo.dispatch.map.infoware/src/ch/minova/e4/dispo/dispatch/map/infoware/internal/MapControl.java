@@ -291,7 +291,7 @@ public class MapControl implements IMapControl {
 				geocodeIgnoreQualityValue = Integer.parseInt((String) event.getNewValue());
 			}
 			if (event.getKey().equals(PreferenceIDs.MAP_RESET)) {
-				if (extracted) {
+				if (isExtracted()) {
 					parent.getDisplay().asyncExec(new Runnable() {
 						@Override
 						public void run() {
@@ -992,7 +992,7 @@ public class MapControl implements IMapControl {
 	}
 
 	protected void extractMap() {
-		if (!extracted) {
+		if (!isExtracted()) {
 			boolean pack = false;
 			Point parentSize = parent.getSize();
 			shell = new Shell(parent.getDisplay(), SWT.BORDER | SWT.CLOSE | SWT.MIN | SWT.MAX | SWT.RESIZE);
@@ -1023,7 +1023,7 @@ public class MapControl implements IMapControl {
 				public void widgetDisposed(DisposeEvent e) {
 					parentClosed = true;
 					if (!shell.isDisposed()) {
-						if (mapDropTarget != null) {
+						if (mapDropTarget != null && !mapDropTarget.isDisposed()) {
 							// Wir müssen den Listener hier lösen, da sonst ein
 							// DND-Error geworfen wird, sollte das Widget das
 							// nächste mal für DnD angemeldet werden
@@ -1428,7 +1428,7 @@ public class MapControl implements IMapControl {
 		prefs.putInt(PreferenceIDs.MAP_LOCATION_Y, extractedShellY);
 		prefs.putInt(PreferenceIDs.MAP_WIDTH, extractedShellWidth);
 		prefs.putInt(PreferenceIDs.MAP_HEIGHT, extractedShellHeight);
-		prefs.putBoolean(PreferenceIDs.MAP_EXTRACTED, extracted);
+		prefs.putBoolean(PreferenceIDs.MAP_EXTRACTED, isExtracted());
 		prefs.putBoolean(PreferenceIDs.MAP_EXTRACTED_MAXIMIZED, extractedMaximized);
 		try {
 			prefs.flush();
@@ -2366,7 +2366,12 @@ public class MapControl implements IMapControl {
 
 	@Override
 	public boolean isExtracted() {
-		return extracted;
+		// prüfen, ob Map wirklich extrahiert ist
+		if (this.shell == null || this.shell.isDisposed()) {
+			this.extracted = false;
+		}
+
+		return this.extracted;
 	}
 
 	@Override
