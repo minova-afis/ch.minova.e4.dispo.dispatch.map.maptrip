@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>ch.minova.bundle</groupId>
 		<artifactId>ch.minova.parent</artifactId>
-		<version>1.2.2</version>
+		<version>10.3.0</version>
 		<relativePath>../../../core/releng/ch.minova.parent.bundle</relativePath>
 	</parent>
 
