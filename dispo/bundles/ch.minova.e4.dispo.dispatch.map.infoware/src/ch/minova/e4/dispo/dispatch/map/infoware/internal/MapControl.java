@@ -830,6 +830,7 @@ public class MapControl implements IMapControl {
 	public void init() {
 		// TODO können jetzt injected werden
 		IEclipsePreferences mapPrefsNode = ConfigurationScope.INSTANCE.getNode(Activator.PLUGIN_ID);
+		IEclipsePreferences instanceScope = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID);
 		prefChange = new MapPreferencesListener();
 		mapPrefsNode.addPreferenceChangeListener(prefChange);
 		locatorRGBAllPositionForeground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_FOREGROUND_SHIPMENT_OF_TRIP, "255, 255, 255");
@@ -853,8 +854,8 @@ public class MapControl implements IMapControl {
 		distortionAngle = mapPrefsNode.getInt(PreferenceIDs.MAPDISTORTION_ANGLE, 0);
 		distortionDistance = mapPrefsNode.getInt(PreferenceIDs.MAPDISTORTION_DISTANCE, 25);
 		geocodeIgnoreQuality = mapPrefsNode.getBoolean(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY, geocodeIgnoreQuality);
-		geocodeIgnoreQualityValue = mapPrefsNode.getInt(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE, geocodeIgnoreQualityValue);
-		maxShipmentsDispatchedInArea = mapPrefsNode.getInt(PreferenceIDs.MAP_MAX_SHIPMENTS_DISPATCHED_IN_AREA, maxShipmentsDispatchedInArea);
+		geocodeIgnoreQualityValue = instanceScope.getInt(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE, geocodeIgnoreQualityValue);
+		maxShipmentsDispatchedInArea = instanceScope.getInt(PreferenceIDs.MAP_MAX_SHIPMENTS_DISPATCHED_IN_AREA, maxShipmentsDispatchedInArea);
 		drawMapDelay = mapPrefsNode.getInt(PreferenceIDs.DRAW_MAP_DELAY, 2000);
 
 		if (registry.get(TRUCK_IMAGE) == null) {
