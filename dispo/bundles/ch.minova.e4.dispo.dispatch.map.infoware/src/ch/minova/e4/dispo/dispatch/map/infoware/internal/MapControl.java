@@ -1723,7 +1723,6 @@ public class MapControl implements IMapControl {
 							Shipment shipment = DispoModelCache.getInstance().getShipment(shipmentKey);
 							if (shipment != null && shipment.getTrip() != null) {
 								broker.post(DispoDispatchEventTopics.DISPATCH_SHOW_TRIP, shipment.getTrip());
-								broker.post(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, shipment.getTrip());
 								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRUCK, shipment.getTrip().getTruck().getVehicle());
 								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, null);
 								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, shipment.getTrip());
