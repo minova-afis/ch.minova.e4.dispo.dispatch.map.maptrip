@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Infoware Map Implementation Plug-In
 Bundle-SymbolicName: ch.minova.e4.dispo.dispatch.map.infoware;singleton:=true
-Bundle-Version: 11.1.0.qualifier
+Bundle-Version: 11.2.0.qualifier
 Bundle-Vendor: MINOVA Information Services GmbH
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
@@ -19,4 +19,5 @@ Require-Bundle: org.eclipse.core.runtime;bundle-version="3.13.0",
  ch.minova.e4.dispo.dispatch;bundle-version="11.0.0",
  ch.minova.dispo.dispatch.model;bundle-version="11.2.0",
  ch.minova.core.model;bundle-version="11.1.0",
- org.eclipse.e4.ui.di
+ org.eclipse.e4.ui.di,
+ org.eclipse.e4.core.di.extensions;bundle-version="0.15.0"
