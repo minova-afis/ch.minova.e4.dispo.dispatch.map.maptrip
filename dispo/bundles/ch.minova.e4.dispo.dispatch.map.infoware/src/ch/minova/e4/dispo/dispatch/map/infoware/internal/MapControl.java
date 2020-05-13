@@ -2102,8 +2102,7 @@ public class MapControl implements IMapControl {
 				// 2. die Qualität nicht egal und und:
 				// 2.1 es ein eindeutiger Hit ist, aber die Qualität zu schlecht
 				// 2.2 es mehrere Treffer gibt
-				if (geo.size() == 0
-						|| (!geocodeIgnoreQuality && ((geo.size() == 1 && geo.get(0).getHitProbability() < geocodeIgnoreQualityValue) || geo.size() > 1))) {
+				if (geo.size() == 0 || (!geocodeIgnoreQuality && ((geo.size() == 1 && !checkQualtiy(geo.get(0).getQuality())) || geo.size() > 1))) {
 					// Keiner oder mutliple Treffer
 					// Form anzeigen
 					inSearchMode = true;
@@ -2175,6 +2174,28 @@ public class MapControl implements IMapControl {
 			}
 		}
 		return foundAddresses;
+	}
+
+	/**
+	 * Diese Methode prüft die Qualität des Datensatzen. Sie muss ein einem der beiden 1. Buchstaben ein A haben und der Dritte Buchstabe muss auch ein A sein,
+	 * damit wir die Adresse übernehmen. <br>
+	 * PLZ muss passen (A)</br>
+	 * <br>
+	 * Straße getroffen, korrigiert durch Rechtschreibung, mittelpunkt der Straße gefunden (A,E)</br>
+	 * 
+	 * @param quString
+	 * @return
+	 */
+	public boolean checkQualtiy(String quString) {
+		char[] charArray = quString.toCharArray();
+		if (charArray[0] == 'A' // PLZ
+				&& (charArray[2] == 'A' || charArray[2] == 'E')) // Straße
+		{
+			return true;
+		} else {
+			return false;
+		}
+
 	}
 
 	@Override
