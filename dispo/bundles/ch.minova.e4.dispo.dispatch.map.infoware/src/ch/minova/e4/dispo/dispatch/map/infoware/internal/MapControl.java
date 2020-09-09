@@ -1702,13 +1702,15 @@ public class MapControl implements IMapControl {
 			infoTable.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseDoubleClick(MouseEvent e) {
-					TableItem item = infoTable.getSelection()[0];
-					if (listener != null && item.getData() instanceof Integer) {
-						listener.shipmentDoubleClicked(((Integer) item.getData()).intValue());
-					}
-					if (item.getData(ShipmentInfos.TOOLTIP_TEXT.name()) != null) {
-						infoToolTip.setText((String) item.getData(ShipmentInfos.TOOLTIP_TEXT.name()));
-						infoToolTip.show(new Point(0, 0));
+					if (infoTable != null && infoTable.getSelectionCount() > 0) {
+						TableItem item = infoTable.getSelection()[0];
+						if (listener != null && item.getData() instanceof Integer) {
+							listener.shipmentDoubleClicked(((Integer) item.getData()).intValue());
+						}
+						if (item.getData(ShipmentInfos.TOOLTIP_TEXT.name()) != null) {
+							infoToolTip.setText((String) item.getData(ShipmentInfos.TOOLTIP_TEXT.name()));
+							infoToolTip.show(new Point(0, 0));
+						}
 					}
 				}
 			});
