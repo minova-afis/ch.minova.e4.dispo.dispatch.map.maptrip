@@ -549,7 +549,8 @@ public class MapControl implements IMapControl {
 							if (geo instanceof GeocodedImageProvider) {
 								GeocodedImageProvider geocodedImage = (GeocodedImageProvider) geo;
 								Boolean allocated = (Boolean) geocodedImage.getInfos().get(ShipmentInfos.ALLOCATED.name());
-								if (!showAllocatedShipments && allocated) {
+								OpenDeliveryBean shipment = (OpenDeliveryBean) ((IInfoProvider) geo).getInfos().get(ShipmentInfos.SOURCE.name());
+								if (!checkIfToBeShown(shipment, allocated)) {
 									continue;
 								}
 								if (imageFilter == null || imageFilter.show(geocodedImage)) {
@@ -698,6 +699,10 @@ public class MapControl implements IMapControl {
 
 	@Inject
 	private UISynchronize sync;
+
+	@Inject
+	@org.eclipse.e4.core.di.extensions.Preference(nodePath = ch.minova.e4.dispo.dispatch.map.ui.Activator.PLUGIN_ID, value = PreferenceIDs.SHOW_ALLOCATED_SHIPMENT_FOR_TODAY)
+	private Boolean showAllocatedShipmentForToday;
 
 	private MapViewPointController controller;
 	private Composite parent;
@@ -1080,7 +1085,7 @@ public class MapControl implements IMapControl {
 			showtruckPoolKey = null;
 			showtruckKey = null;
 		}
-		redrawIfAllocatedforObject();
+		redrawIfShowAllocatedForObject();
 	}
 
 	@Inject
@@ -1094,13 +1099,13 @@ public class MapControl implements IMapControl {
 		} else {
 			showtruckPoolKey = null;
 		}
-		redrawIfAllocatedforObject();
+		redrawIfShowAllocatedForObject();
 	}
 
 	@Inject
 	private void showCurrentScheduledDate(@Optional @Named(DispoDispatchEventTopics.DISPATCH_CONTEXT_SCHEDULED_DATE) LocalDate scheduledDate) {
 		this.scheduledDate = scheduledDate;
-		redrawIfAllocatedforObject();
+		redrawIfShowAllocatedShipments();
 	}
 
 	@Inject
@@ -1114,7 +1119,7 @@ public class MapControl implements IMapControl {
 			showtruckPoolKey = null;
 			showtruckKey = null;
 		}
-		redrawIfAllocatedforObject();
+		redrawIfShowAllocatedForObject();
 		if (this.drawTrip) {
 			if (trip != null) {
 				setTripKey(trip.getKey());
@@ -1130,8 +1135,14 @@ public class MapControl implements IMapControl {
 		}
 	}
 
-	private void redrawIfAllocatedforObject() {
+	private void redrawIfShowAllocatedForObject() {
 		if (showAllocatedforObject) {
+			redrawMap(false, true);
+		}
+	}
+
+	private void redrawIfShowAllocatedShipments() {
+		if (showAllocatedShipments || showAllocatedforObject) {
 			redrawMap(false, true);
 		}
 	}
@@ -1575,6 +1586,34 @@ public class MapControl implements IMapControl {
 		redrawMap(true, Trip);
 	}
 
+	/**
+	 * prüft verschiedene Einstellungen, um zu entscheiden, ob das Element angezeigt werden soll
+	 * 
+	 * @param od
+	 *            {@link OpenDeliveryBean} (normalerweise ein {@link Shipment})
+	 * @param allocated
+	 *            kann man eigentlich aus dem Shipment ermitteln, aber sicher ist sicher
+	 * @return
+	 * @author wild
+	 * @since 11.1.1
+	 */
+	private boolean checkIfToBeShown(OpenDeliveryBean od, Boolean allocated) {
+		if (od instanceof Shipment) {
+			Shipment shipment = (Shipment) od;
+
+			// Allocated Shipments gar nicht anzeigen?
+			if (allocated && !showAllocatedShipments) {
+				return false;
+			}
+
+			// nur Lieferaufträge von heute (Plandatum)
+			if (showAllocatedShipmentForToday && shipment.getTrip() != null && !shipment.getTrip().getScheduledDate().equals(this.scheduledDate)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	private List<IInfoProvider> getShipmentsFromPixel(int pixelx, int pixely) {
 		List<IInfoProvider> shipments = new LinkedList<>();
 		int minx, maxx, miny, maxy;
@@ -1591,7 +1630,8 @@ public class MapControl implements IMapControl {
 					// Es kann sein, das der ausgewählte Punkt nicht mehr
 					// vorhanden ist, da er disponiert wurde...
 					// Wir müssen noch prüfen, ob da allocated Shipments dabei sind
-					if (allocated && !showAllocatedShipments) {
+					OpenDeliveryBean shipment = (OpenDeliveryBean) ((IInfoProvider) geo).getInfos().get(ShipmentInfos.SOURCE.name());
+					if (!checkIfToBeShown(shipment, allocated)) {
 						continue;
 					}
 					if ((p.x > minx && p.x < maxx) && (p.y > miny && p.y < maxy) && mapImages.contains(geo)) {
