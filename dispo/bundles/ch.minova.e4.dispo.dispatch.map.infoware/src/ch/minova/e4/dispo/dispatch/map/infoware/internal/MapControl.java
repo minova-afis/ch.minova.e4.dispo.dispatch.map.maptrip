@@ -132,14 +132,8 @@ import ch.minova.ncore.util.MessageFormat;
 public class MapControl implements IMapControl {
 	private static final String TRUCK_IMAGE = "TRUCK_IMAGE";
 	private static final String DEPOT_IMAGE = "DEPOT_IMAGE";
-	// Standard immer 0
-	private int tripKey = 0;
-	private String tripKeyStr = "";
 
-	@Inject
-	private UISynchronize sync;
-
-	private Color getColorOfString(String rgb) {
+	private static Color getColorOfString(String rgb) {
 		RGB locatorRGB = ch.minova.e4.ui.preferences.Preference.asRGB(rgb);
 		return new Color(Display.getCurrent(), locatorRGB);
 	}
@@ -292,12 +286,7 @@ public class MapControl implements IMapControl {
 			}
 			if (event.getKey().equals(PreferenceIDs.MAP_RESET)) {
 				if (isExtracted()) {
-					parent.getDisplay().asyncExec(new Runnable() {
-						@Override
-						public void run() {
-							shell.setLocation(0, 0);
-						}
-					});
+					parent.getDisplay().asyncExec(() -> shell.setLocation(0, 0));
 				} else {
 					extractedShellX = 0;
 					extractedShellY = 0;
@@ -366,19 +355,16 @@ public class MapControl implements IMapControl {
 		public FireAndForgetLocator(GeocodedLocator locator) {
 			this.locator = locator;
 			timer = new Timer();
-			timer.schedule(this, 1000l * locatorDuration);
+			timer.schedule(this, 1000L * locatorDuration);
 		}
 
 		@Override
 		public void run() {
 			if (!map.isDisposed()) {
 				mapImages.remove(locator);
-				map.getDisplay().syncExec(new Runnable() {
-					@Override
-					public void run() {
-						if (!map.isDisposed()) {
-							redrawMap(false);
-						}
+				map.getDisplay().syncExec(() -> {
+					if (!map.isDisposed()) {
+						redrawMap(false);
 					}
 				});
 				timer.cancel();
@@ -421,7 +407,7 @@ public class MapControl implements IMapControl {
 			try {
 				timer.purge();
 				task = new ResizeTimerTask();
-				timer.schedule(task, 500l);
+				timer.schedule(task, 500L);
 			} catch (Exception err) {
 				// IllegalStateException -> Timer schon gecancelt
 				Log.err(this, err.getMessage());
@@ -706,6 +692,13 @@ public class MapControl implements IMapControl {
 		}
 	}
 
+	// Standard immer 0
+	private int tripKey = 0;
+	private String tripKeyStr = "";
+
+	@Inject
+	private UISynchronize sync;
+
 	private MapViewPointController controller;
 	private Composite parent;
 	private Canvas map;
@@ -977,12 +970,7 @@ public class MapControl implements IMapControl {
 		context.getParent().set(MapViewPointController.class, controller);
 		adapter = new MapControlMouseAdapter(this, controller);
 		if (extractable && initialExtracted) {
-			parent.getDisplay().asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					extractMap();
-				}
-			});
+			parent.getDisplay().asyncExec(this::extractMap);
 		}
 
 		// jetzt sind wir fertig - inject ganz oben, um die Helper zu informieren
@@ -1019,21 +1007,18 @@ public class MapControl implements IMapControl {
 			// extract.setToolTipText(service.translate("Dispo.Dispatch.Tooltip.CloseMapWindow",
 			// null));
 
-			parentComposite.addDisposeListener(new DisposeListener() {
-				@Override
-				public void widgetDisposed(DisposeEvent e) {
-					parentClosed = true;
-					if (!shell.isDisposed()) {
-						if (mapDropTarget != null && !mapDropTarget.isDisposed()) {
-							// Wir müssen den Listener hier lösen, da sonst ein
-							// DND-Error geworfen wird, sollte das Widget das
-							// nächste mal für DnD angemeldet werden
-							mapDropTarget.removeDropListener(dropTargetListener);
-							// mapDropTarget.dispose();
-							// mapDropTarget = null;
-						}
-						shell.close();
+			parentComposite.addDisposeListener(e -> {
+				parentClosed = true;
+				if (!shell.isDisposed()) {
+					if (mapDropTarget != null && !mapDropTarget.isDisposed()) {
+						// Wir müssen den Listener hier lösen, da sonst ein
+						// DND-Error geworfen wird, sollte das Widget das
+						// nächste mal für DnD angemeldet werden
+						mapDropTarget.removeDropListener(dropTargetListener);
+						// mapDropTarget.dispose();
+						// mapDropTarget = null;
 					}
+					shell.close();
 				}
 			});
 
@@ -1207,38 +1192,35 @@ public class MapControl implements IMapControl {
 			// Sobald wir es auf true setzen bleibt es ach so
 			changedmap |= changed;
 		}
-		Runnable runnable = new Runnable() {
-			@Override
-			public void run() {
-				if (!map.isDisposed()) {
-					redrawMapImages(changedmap);
-					map.getShell().setCursor(map.getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
-					if (changedmap) {
-						// Wenn es eine Konkrete Shapedatei gibt, dann wird diese angezeigt.
-						if (tripKeyStr != null && !tripKeyStr.isEmpty()) {
-							controller.drawMapTrip(changedmap, tripKeyStr);
-						} else if (tripKey != 0) {
-							controller.drawMapTrip(changedmap, String.valueOf(tripKey));
-						} else {
-							controller.drawMap(changedmap);
-						}
+		Runnable runnable = () -> {
+			if (!map.isDisposed()) {
+				redrawMapImages(changedmap);
+				map.getShell().setCursor(map.getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
+				if (changedmap) {
+					// Wenn es eine Konkrete Shapedatei gibt, dann wird diese angezeigt.
+					if (tripKeyStr != null && !tripKeyStr.isEmpty()) {
+						controller.drawMapTrip(changedmap, tripKeyStr);
+					} else if (tripKey != 0) {
+						controller.drawMapTrip(changedmap, String.valueOf(tripKey));
+					} else {
+						controller.drawMap(changedmap);
 					}
-					map.getShell().setCursor(null);
-					paintListener.breakOut = false;
-					Image backgroundImage = map.getBackgroundImage();
-					if (backgroundImage == null || backgroundImage.isDisposed()) {
-						controller.drawMap(true);
-					}
-					map.redraw();
+				}
+				map.getShell().setCursor(null);
+				paintListener.breakOut = false;
+				Image backgroundImage = map.getBackgroundImage();
+				if (backgroundImage == null || backgroundImage.isDisposed()) {
+					controller.drawMap(true);
+				}
+				map.redraw();
 
-					// wieder zurücksetzen
-					synchronized (changedmap) {
-						changedmap = false;
-					}
-					// erst wenn tatsächlich fertig gemalt wurde!
-					synchronized (draw) {
-						draw = false;
-					}
+				// wieder zurücksetzen
+				synchronized (changedmap) {
+					changedmap = false;
+				}
+				// erst wenn tatsächlich fertig gemalt wurde!
+				synchronized (draw) {
+					draw = false;
 				}
 			}
 		};
@@ -1608,8 +1590,7 @@ public class MapControl implements IMapControl {
 				if (geo instanceof GeocodedImageProvider && ((GeocodedImageProvider) geo).getSelection().isSelected() || allocated) {
 					// Es kann sein, das der ausgewählte Punkt nicht mehr
 					// vorhanden ist, da er disponiert wurde...
-					// Wir müssen noch prüfen, ob da allocated Shipments dabei
-					// sind
+					// Wir müssen noch prüfen, ob da allocated Shipments dabei sind
 					if (allocated && !showAllocatedShipments) {
 						continue;
 					}
@@ -1896,12 +1877,7 @@ public class MapControl implements IMapControl {
 			final Shell tmpShell = infoShell;
 			infoShell = null;
 			if (tmpShell != null) {
-				tmpShell.getDisplay().asyncExec(new Runnable() {
-					@Override
-					public void run() {
-						tmpShell.dispose();
-					}
-				});
+				tmpShell.getDisplay().asyncExec(() -> tmpShell.dispose());
 			}
 		}
 	}
@@ -2108,35 +2084,32 @@ public class MapControl implements IMapControl {
 					// Keiner oder mutliple Treffer
 					// Form anzeigen
 					inSearchMode = true;
-					Runnable r = new Runnable() {
-						@Override
-						public void run() {
-							// API sagt, sollten wir so machen...
-							if (!map.isDisposed()) {
-								addressDialog = new FindAddressDialog(map.getShell(), MapControl.this, translationService, geoCoder,
-										FindAddressDialog.DIALOG_TAKEOVER);
-								addressDialog.create();
-								addressDialog.setAddress(a);
-								addressDialog.setResult(geo);
-								int result = addressDialog.open();
-								if (result == IDialogConstants.OK_ID) {
-									GeocodableAddressWithSource<E> add = new GeocodableAddressWithSource<>(a);
-									IGeocodedAddress add2 = addressDialog.getSelected();
-									if (add2 != null) {
-										add.setMercatorX(add2.getMercatorX());
-										add.setMercatorY(add2.getMercatorY());
-										// Auch in diesem Fall wollen wir die
-										// Koordinaten haben. Lieber 20m daneben
-										// als mitten auf der Erdkugel
-										add.setCoordinateX(add2.getCoordinateX());
-										add.setCoordinateY(add2.getCoordinateY());
-										foundAddresses.add(add);
-									}
+					Runnable r = () -> {
+						// API sagt, sollten wir so machen...
+						if (!map.isDisposed()) {
+							addressDialog = new FindAddressDialog(map.getShell(), MapControl.this, translationService, geoCoder,
+									FindAddressDialog.DIALOG_TAKEOVER);
+							addressDialog.create();
+							addressDialog.setAddress(a);
+							addressDialog.setResult(geo);
+							int result = addressDialog.open();
+							if (result == IDialogConstants.OK_ID) {
+								GeocodableAddressWithSource<E> add = new GeocodableAddressWithSource<>(a);
+								IGeocodedAddress add2 = addressDialog.getSelected();
+								if (add2 != null) {
+									add.setMercatorX(add2.getMercatorX());
+									add.setMercatorY(add2.getMercatorY());
+									// Auch in diesem Fall wollen wir die
+									// Koordinaten haben. Lieber 20m daneben
+									// als mitten auf der Erdkugel
+									add.setCoordinateX(add2.getCoordinateX());
+									add.setCoordinateY(add2.getCoordinateY());
+									foundAddresses.add(add);
 								}
-								addressDialog.close();
-								addressDialog = null;
-								inSearchMode = false;
 							}
+							addressDialog.close();
+							addressDialog = null;
+							inSearchMode = false;
 						}
 					};
 
