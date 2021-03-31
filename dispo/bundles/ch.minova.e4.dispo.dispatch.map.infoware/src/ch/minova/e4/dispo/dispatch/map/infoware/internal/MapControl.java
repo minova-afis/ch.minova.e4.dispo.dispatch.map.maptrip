@@ -25,6 +25,7 @@ import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChange
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.core.di.annotations.Optional;
+import org.eclipse.e4.core.di.extensions.Preference;
 import org.eclipse.e4.core.services.events.IEventBroker;
 import org.eclipse.e4.core.services.translation.TranslationService;
 import org.eclipse.e4.ui.di.UISynchronize;
@@ -118,7 +119,6 @@ import ch.minova.e4.dispo.dispatch.map.ui.IMapSelectionListener;
 import ch.minova.e4.dispo.dispatch.map.ui.ITruckPosition;
 import ch.minova.e4.dispo.dispatch.map.ui.MapImageConstants;
 import ch.minova.e4.ui.controller.BufferedDisplay;
-import ch.minova.e4.ui.preferences.Preference;
 import ch.minova.ncore.data.ValueFormatType;
 import ch.minova.ncore.data.form.ValueFormatter;
 import ch.minova.ncore.internationalization.Messages;
@@ -255,7 +255,7 @@ public class MapControl implements IMapControl {
 		@Override
 		public void preferenceChange(PreferenceChangeEvent event) {
 			if (event.getKey().equals(PreferenceIDs.MAP_LOCATOR_COLOR)) {
-				locatorRGB = Preference.asRGB((String) event.getNewValue());
+				locatorRGB = ch.minova.e4.ui.preferences.Preference.asRGB((String) event.getNewValue());
 			}
 			if (event.getKey().equals(PreferenceIDs.MAP_LOCATOR_SIZE)) {
 				locatorSize = Integer.parseInt((String) event.getNewValue());
@@ -268,15 +268,6 @@ public class MapControl implements IMapControl {
 			}
 			if (event.getKey().equals(PreferenceIDs.MAP_ZOOM_LATITUDE)) {
 				mapZoomLatitude = Integer.parseInt((String) event.getNewValue());
-			}
-			if (event.getKey().equals(PreferenceIDs.MAPDISTORTION_ACTIVATED)) {
-				distortion = Boolean.parseBoolean((String) event.getNewValue());
-			}
-			if (event.getKey().equals(PreferenceIDs.MAPDISTORTION_ANGLE)) {
-				distortionAngle = Integer.parseInt((String) event.getNewValue());
-			}
-			if (event.getKey().equals(PreferenceIDs.MAPDISTORTION_DISTANCE)) {
-				distortionDistance = Integer.parseInt((String) event.getNewValue());
 			}
 			if (event.getKey().equals(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY)) {
 				geocodeIgnoreQuality = Boolean.parseBoolean((String) event.getNewValue());
@@ -457,7 +448,7 @@ public class MapControl implements IMapControl {
 	}
 
 	/**
-	 * Platzhalter Object mit vorverarbeiteten Informationen für die Karte
+	 * Platzhalter-Objekt mit vorverarbeiteten Informationen für die Karte
 	 * 
 	 * @author bohlender
 	 * @see MapControl#preprocessImages(List)
@@ -468,7 +459,6 @@ public class MapControl implements IMapControl {
 		private final Map<IGeocoded, Point> imagePoints;
 
 		public MapImages(List<IGeocoded> images, Map<Point, DistortionLine> distortionLines, Map<IGeocoded, Point> imagePoints) {
-			super();
 			this.images = images;
 			this.distortionLines = distortionLines;
 			this.imagePoints = imagePoints;
@@ -786,12 +776,17 @@ public class MapControl implements IMapControl {
 
 	private int mapZoomLatitude = 5000;
 
-	private boolean distortion = false;
-	private int distortionAngle = 0;
-	private int distortionDistance = 0;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAPDISTORTION_ACTIVATED)
+	private boolean distortion;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAPDISTORTION_ANGLE)
+	private int distortionAngle;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAPDISTORTION_DISTANCE)
+	private int distortionDistance;
+	// private Map<Point, DistortionLine> distortionLines = new HashMap<Point, MapControl.DistortionLine>();
 
-	// private Map<Point, DistortionLine> distortionLines = new HashMap<Point,
-	// MapControl.DistortionLine>();
 	private boolean geocodeIgnoreQuality = false;
 	private Integer geocodeIgnoreQualityValue = 90;
 	private boolean showAllocatedShipments;
@@ -837,7 +832,7 @@ public class MapControl implements IMapControl {
 		locatorRGBfirstPositionBackground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_BACKGROUND_FIRST_SHIPMENT_OF_TRIP, "0, 0, 128");
 		locatorSize = mapPrefsNode.getInt(PreferenceIDs.MAP_LOCATOR_SIZE, 20);
 		String rgbString = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR, "255, 0, 0");
-		locatorRGB = Preference.asRGB(rgbString);
+		locatorRGB = ch.minova.e4.ui.preferences.Preference.asRGB(rgbString);
 		iconLocation = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_ICON, null);
 		areaprefs = ConfigurationScope.INSTANCE.getNode(PreferenceIDs.MAPAREA_PREFERENCES_CONTEXT);
 		areaprefs.addNodeChangeListener(prefChange);
@@ -848,9 +843,6 @@ public class MapControl implements IMapControl {
 		extractedMaximized = mapPrefsNode.getBoolean(PreferenceIDs.MAP_EXTRACTED_MAXIMIZED, false);
 		initialExtracted = mapPrefsNode.getBoolean(PreferenceIDs.MAP_EXTRACTED, false);
 		mapZoomLatitude = mapPrefsNode.getInt(PreferenceIDs.MAP_ZOOM_LATITUDE, 5000);
-		distortion = mapPrefsNode.getBoolean(PreferenceIDs.MAPDISTORTION_ACTIVATED, false);
-		distortionAngle = mapPrefsNode.getInt(PreferenceIDs.MAPDISTORTION_ANGLE, 0);
-		distortionDistance = mapPrefsNode.getInt(PreferenceIDs.MAPDISTORTION_DISTANCE, 25);
 		geocodeIgnoreQuality = mapPrefsNode.getBoolean(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY, geocodeIgnoreQuality);
 		geocodeIgnoreQualityValue = instanceScope.getInt(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE, geocodeIgnoreQualityValue);
 		maxShipmentsDispatchedInArea = instanceScope.getInt(PreferenceIDs.MAP_MAX_SHIPMENTS_DISPATCHED_IN_AREA, maxShipmentsDispatchedInArea);
