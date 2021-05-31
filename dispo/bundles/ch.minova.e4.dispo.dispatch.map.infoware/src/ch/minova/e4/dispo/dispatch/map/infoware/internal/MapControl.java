@@ -22,7 +22,6 @@ import org.eclipse.core.runtime.preferences.IEclipsePreferences.INodeChangeListe
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.NodeChangeEvent;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent;
-import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.core.di.extensions.Preference;
@@ -278,12 +277,6 @@ public class MapControl implements IMapControl {
 		public void preferenceChange(PreferenceChangeEvent event) {
 			if (event.getKey().equals(PreferenceIDs.MAP_ZOOM_LATITUDE)) {
 				mapZoomLatitude = Integer.parseInt((String) event.getNewValue());
-			}
-			if (event.getKey().equals(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY)) {
-				geocodeIgnoreQuality = Boolean.parseBoolean((String) event.getNewValue());
-			}
-			if (event.getKey().equals(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE)) {
-				geocodeIgnoreQualityValue = Integer.parseInt((String) event.getNewValue());
 			}
 			if (event.getKey().equals(PreferenceIDs.MAP_RESET)) {
 				if (isExtracted()) {
@@ -803,9 +796,17 @@ public class MapControl implements IMapControl {
 	private int distortionDistance;
 
 	// *** Farbkonfiguration
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_COLOR_BACKGROUND_FIRST_SHIPMENT_OF_TRIP)
 	private String locatorRGBfirstPositionBackground;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_COLOR_FOREGROUND_FIRST_SHIPMENT_OF_TRIP)
 	private String locatorRGBfirstPositionForeground;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_COLOR_BACKGROUND_SHIPMENT_OF_TRIP)
 	private String locatorRGBAllPositionBackground;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_COLOR_FOREGROUND_SHIPMENT_OF_TRIP)
 	private String locatorRGBAllPositionForeground;
 
 	// *** sonstige Map
@@ -813,10 +814,20 @@ public class MapControl implements IMapControl {
 	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.SHOW_ALLOCATED_SHIPMENT_FOR_TODAY)
 	private Boolean showAllocatedShipmentForToday;
 
-	private boolean geocodeIgnoreQuality = false;
-	private Integer geocodeIgnoreQualityValue = 90;
-	private Integer maxShipmentsDispatchedInArea = 25;
-	private Integer drawMapDelay = 2000;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY)
+	private boolean geocodeIgnoreQuality;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE)
+	private Integer geocodeIgnoreQualityValue;
+
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_MAX_SHIPMENTS_DISPATCHED_IN_AREA)
+	private Integer maxShipmentsDispatchedInArea;
+
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.DRAW_MAP_DELAY)
+	private Integer drawMapDelay;
 
 	// ******* Einstellungen, die nicht über Inject kommen
 	// Listener für sonstige
@@ -850,13 +861,9 @@ public class MapControl implements IMapControl {
 	public void init() {
 		// TODO können jetzt injected werden
 		IEclipsePreferences mapPrefsNode = ConfigurationScope.INSTANCE.getNode(Activator.PLUGIN_ID);
-		IEclipsePreferences instanceScope = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID);
 		prefChange = new MapPreferencesListener();
 		mapPrefsNode.addPreferenceChangeListener(prefChange);
-		locatorRGBAllPositionForeground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_FOREGROUND_SHIPMENT_OF_TRIP, "255, 255, 255");
-		locatorRGBAllPositionBackground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_BACKGROUND_SHIPMENT_OF_TRIP, "0, 0, 128");
-		locatorRGBfirstPositionForeground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_FOREGROUND_FIRST_SHIPMENT_OF_TRIP, "255, 255, 255");
-		locatorRGBfirstPositionBackground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_BACKGROUND_FIRST_SHIPMENT_OF_TRIP, "0, 0, 128");
+
 		areaprefs = ConfigurationScope.INSTANCE.getNode(PreferenceIDs.MAPAREA_PREFERENCES_CONTEXT);
 		areaprefs.addNodeChangeListener(prefChange);
 		extractedShellHeight = mapPrefsNode.getInt(PreferenceIDs.MAP_HEIGHT, 0);
@@ -866,10 +873,6 @@ public class MapControl implements IMapControl {
 		extractedMaximized = mapPrefsNode.getBoolean(PreferenceIDs.MAP_EXTRACTED_MAXIMIZED, false);
 		initialExtracted = mapPrefsNode.getBoolean(PreferenceIDs.MAP_EXTRACTED, false);
 		mapZoomLatitude = mapPrefsNode.getInt(PreferenceIDs.MAP_ZOOM_LATITUDE, 5000);
-		geocodeIgnoreQuality = mapPrefsNode.getBoolean(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY, geocodeIgnoreQuality);
-		geocodeIgnoreQualityValue = instanceScope.getInt(PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE, geocodeIgnoreQualityValue);
-		maxShipmentsDispatchedInArea = instanceScope.getInt(PreferenceIDs.MAP_MAX_SHIPMENTS_DISPATCHED_IN_AREA, maxShipmentsDispatchedInArea);
-		drawMapDelay = mapPrefsNode.getInt(PreferenceIDs.DRAW_MAP_DELAY, 2000);
 
 		if (registry.get(TRUCK_IMAGE) == null) {
 			registry.put(TRUCK_IMAGE, Activator.getImageRegistry().getDescriptor(MapImageConstants.MAPIMAGES_TRUCK));
