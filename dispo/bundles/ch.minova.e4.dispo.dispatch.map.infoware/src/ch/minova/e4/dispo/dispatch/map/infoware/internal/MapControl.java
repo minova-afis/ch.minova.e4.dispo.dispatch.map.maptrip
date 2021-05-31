@@ -700,36 +700,15 @@ public class MapControl implements IMapControl {
 	@Inject
 	private UISynchronize sync;
 
-	@Inject
-	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.SHOW_ALLOCATED_SHIPMENT_FOR_TODAY)
-	private Boolean showAllocatedShipmentForToday;
-
 	private MapViewPointController controller;
 	private Composite parent;
 	private Canvas map;
 	private MapControlMouseAdapter adapter;
 	private Image backgroundImage = null;
 
-	// Locator (Positionsgeber)
-	@Inject
-	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_SIZE)
-	private int locatorSize = 25;
-	@Inject
-	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_DISPLAY_TIME)
-	private int locatorDuration = 15;
-	// inject über Methode
-	private RGB locatorRGB;
-	@Inject
-	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_ICON)
-	private String iconLocation;
-
 	private List<IGeocoded> mapImages = new CopyOnWriteArrayList<>();
 
-	private boolean extracted = false;
-	private boolean initialExtracted = false;
 	private Composite parentComposite;
-
-	private IEclipsePreferences areaprefs;
 
 	@Inject
 	@Optional
@@ -767,19 +746,8 @@ public class MapControl implements IMapControl {
 	private boolean inSearchMode = false;
 	private boolean inGeoCodeMode = false;
 
-	private MapPreferencesListener prefChange;
-
 	private Shell shell;
 
-	private boolean parentClosed = false;
-
-	private int extractedShellX = 0;
-	private int extractedShellY = 0;
-	private int extractedShellWidth = 0;
-	private int extractedShellHeight = 0;
-	private boolean extractedMaximized = false;
-
-	private MapExtractedLocationListener extractionListener;
 	private ImageRegistry registry = new ImageRegistry();
 
 	private boolean trucksSelected;
@@ -792,26 +760,7 @@ public class MapControl implements IMapControl {
 	private final Color colorBlack = Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
 	private boolean viewpointChanged;
 
-	private int mapZoomLatitude = 5000;
-
-	@Inject
-	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAPDISTORTION_ACTIVATED)
-	private boolean distortion;
-	@Inject
-	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAPDISTORTION_ANGLE)
-	private int distortionAngle;
-	@Inject
-	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAPDISTORTION_DISTANCE)
-	private int distortionDistance;
-	// private Map<Point, DistortionLine> distortionLines = new HashMap<Point, MapControl.DistortionLine>();
-
-	private boolean geocodeIgnoreQuality = false;
-	private Integer geocodeIgnoreQualityValue = 90;
 	private boolean showAllocatedShipments;
-	private Integer maxShipmentsDispatchedInArea = 25;
-	private Integer drawMapDelay = 2000;
-
-	//
 	private boolean showAllocatedforObject;
 	private Integer showtripkey;
 	private Integer showtruckKey;
@@ -828,10 +777,70 @@ public class MapControl implements IMapControl {
 
 	protected Boolean draw = false;
 
+	// ******* Map-Preferences
+	// *** Locator (Positionsgeber)
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_SIZE)
+	private int locatorSize = 25;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_DISPLAY_TIME)
+	private int locatorDuration = 15;
+	// inject über Methode
+	private RGB locatorRGB;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_ICON)
+	private String iconLocation;
+
+	// *** Verzerrung
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAPDISTORTION_ACTIVATED)
+	private boolean distortion;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAPDISTORTION_ANGLE)
+	private int distortionAngle;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAPDISTORTION_DISTANCE)
+	private int distortionDistance;
+
+	// *** Farbkonfiguration
 	private String locatorRGBfirstPositionBackground;
 	private String locatorRGBfirstPositionForeground;
 	private String locatorRGBAllPositionBackground;
 	private String locatorRGBAllPositionForeground;
+
+	// *** sonstige Map
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.SHOW_ALLOCATED_SHIPMENT_FOR_TODAY)
+	private Boolean showAllocatedShipmentForToday;
+
+	private boolean geocodeIgnoreQuality = false;
+	private Integer geocodeIgnoreQualityValue = 90;
+	private Integer maxShipmentsDispatchedInArea = 25;
+	private Integer drawMapDelay = 2000;
+
+	// ******* Einstellungen, die nicht über Inject kommen
+	// Listener für sonstige
+	private MapPreferencesListener prefChange;
+
+	// Areas
+	private IEclipsePreferences areaprefs;
+
+	// aktueller Zoom
+	private int mapZoomLatitude = 5000;
+
+	// *** Map Extraction
+	private boolean parentClosed = false;
+
+	private boolean extracted = false;
+	private boolean initialExtracted = false;
+
+	private int extractedShellX = 0;
+	private int extractedShellY = 0;
+	private int extractedShellWidth = 0;
+	private int extractedShellHeight = 0;
+	private boolean extractedMaximized = false;
+
+	private MapExtractedLocationListener extractionListener;
 
 	public MapControl() {
 		init();
