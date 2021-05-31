@@ -254,18 +254,6 @@ public class MapControl implements IMapControl {
 	private class MapPreferencesListener implements IPreferenceChangeListener, INodeChangeListener {
 		@Override
 		public void preferenceChange(PreferenceChangeEvent event) {
-			if (event.getKey().equals(PreferenceIDs.MAP_LOCATOR_COLOR)) {
-				locatorRGB = ch.minova.e4.ui.preferences.Preference.asRGB((String) event.getNewValue());
-			}
-			if (event.getKey().equals(PreferenceIDs.MAP_LOCATOR_SIZE)) {
-				locatorSize = Integer.parseInt((String) event.getNewValue());
-			}
-			if (event.getKey().equals(PreferenceIDs.MAP_LOCATOR_DISPLAY_TIME)) {
-				locatorDuration = Integer.parseInt((String) event.getNewValue());
-			}
-			if (event.getKey().equals(PreferenceIDs.MAP_LOCATOR_ICON)) {
-				iconLocation = (String) event.getNewValue();
-			}
 			if (event.getKey().equals(PreferenceIDs.MAP_ZOOM_LATITUDE)) {
 				mapZoomLatitude = Integer.parseInt((String) event.getNewValue());
 			}
@@ -691,7 +679,7 @@ public class MapControl implements IMapControl {
 	private UISynchronize sync;
 
 	@Inject
-	@org.eclipse.e4.core.di.extensions.Preference(nodePath = ch.minova.e4.dispo.dispatch.map.ui.Activator.PLUGIN_ID, value = PreferenceIDs.SHOW_ALLOCATED_SHIPMENT_FOR_TODAY)
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.SHOW_ALLOCATED_SHIPMENT_FOR_TODAY)
 	private Boolean showAllocatedShipmentForToday;
 
 	private MapViewPointController controller;
@@ -700,12 +688,20 @@ public class MapControl implements IMapControl {
 	private MapControlMouseAdapter adapter;
 	private Image backgroundImage = null;
 
-	private int locatorSize = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID).getInt(PreferenceIDs.MAP_LOCATOR_SIZE, 25);
-	private int locatorDuration = InstanceScope.INSTANCE.getNode(Activator.PLUGIN_ID).getInt(PreferenceIDs.MAP_LOCATOR_DISPLAY_TIME, 15);
+	// Locator (Positionsgeber)
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_SIZE)
+	private int locatorSize = 25;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_DISPLAY_TIME)
+	private int locatorDuration = 15;
+	// inject über Methode
+	private RGB locatorRGB;
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_ICON)
+	private String iconLocation;
 
 	private List<IGeocoded> mapImages = new CopyOnWriteArrayList<>();
-	private RGB locatorRGB;
-	private String iconLocation;
 
 	private boolean extracted = false;
 	private boolean initialExtracted = false;
@@ -830,10 +826,6 @@ public class MapControl implements IMapControl {
 		locatorRGBAllPositionBackground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_BACKGROUND_SHIPMENT_OF_TRIP, "0, 0, 128");
 		locatorRGBfirstPositionForeground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_FOREGROUND_FIRST_SHIPMENT_OF_TRIP, "255, 255, 255");
 		locatorRGBfirstPositionBackground = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR_BACKGROUND_FIRST_SHIPMENT_OF_TRIP, "0, 0, 128");
-		locatorSize = mapPrefsNode.getInt(PreferenceIDs.MAP_LOCATOR_SIZE, 20);
-		String rgbString = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_COLOR, "255, 0, 0");
-		locatorRGB = ch.minova.e4.ui.preferences.Preference.asRGB(rgbString);
-		iconLocation = mapPrefsNode.get(PreferenceIDs.MAP_LOCATOR_ICON, null);
 		areaprefs = ConfigurationScope.INSTANCE.getNode(PreferenceIDs.MAPAREA_PREFERENCES_CONTEXT);
 		areaprefs.addNodeChangeListener(prefChange);
 		extractedShellHeight = mapPrefsNode.getInt(PreferenceIDs.MAP_HEIGHT, 0);
@@ -854,6 +846,11 @@ public class MapControl implements IMapControl {
 		if (registry.get(DEPOT_IMAGE) == null) {
 			registry.put(DEPOT_IMAGE, Activator.getImageRegistry().getDescriptor(MapImageConstants.MAPIMAGES_DEPOT));
 		}
+	}
+
+	@Inject
+	public void changeLocatorColor(@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_LOCATOR_COLOR) String locatorColor) {
+		locatorRGB = ch.minova.e4.ui.preferences.Preference.asRGB(locatorColor);
 	}
 
 	@Override
@@ -1877,7 +1874,7 @@ public class MapControl implements IMapControl {
 
 			infoShell.open();
 
-			// Wir wollen die Info-Shell auch schliessen, wenn das Fenster
+			// Wir wollen die Info-Shell auch schließen, wenn das Fenster
 			// den Fokus verliert
 			infoShell.addShellListener(new ShellAdapter() {
 				@Override
