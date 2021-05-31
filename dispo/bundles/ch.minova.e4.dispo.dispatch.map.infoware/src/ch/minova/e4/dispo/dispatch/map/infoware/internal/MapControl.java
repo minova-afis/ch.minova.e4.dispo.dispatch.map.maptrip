@@ -138,6 +138,28 @@ public class MapControl implements IMapControl {
 		return new Color(Display.getCurrent(), locatorRGB);
 	}
 
+	private static String getNonEmptyStringOrNull(Object o) {
+		return o == null ? null : (o.toString().trim().isEmpty() ? null : o.toString().trim());
+	}
+
+	private static String getProductText(OpenDeliveryBean shipment, boolean showProductDescription) {
+		String prod = null;
+
+		if (showProductDescription) {
+			String prodDesc = shipment.getItemDescription();
+			if (prodDesc != null && prodDesc.trim().length() > 0) {
+				prod = prodDesc;
+			} else {
+				// Wohl leer, nehmen wir den Matchcode
+				prod = shipment.getItem().getKeyText();
+			}
+		} else {
+			prod = shipment.getItem().getKeyText();
+		}
+
+		return prod;
+	}
+
 	/**
 	 * Linie, die zwischen Lieferungen auf der Karte gezogen wurde, sollte Verzerrung aktiviert sein
 	 * 
@@ -1909,28 +1931,6 @@ public class MapControl implements IMapControl {
 				tmpShell.getDisplay().asyncExec(() -> tmpShell.dispose());
 			}
 		}
-	}
-
-	private static String getNonEmptyStringOrNull(Object o) {
-		return o == null ? null : (o.toString().trim().isEmpty() ? null : o.toString().trim());
-	}
-
-	private static String getProductText(OpenDeliveryBean shipment, boolean showProductDescription) {
-		String prod = null;
-
-		if (showProductDescription) {
-			String prodDesc = shipment.getItemDescription();
-			if (prodDesc != null && prodDesc.trim().length() > 0) {
-				prod = prodDesc;
-			} else {
-				// Wohl leer, nehmen wir den Matchcode
-				prod = shipment.getItem().getKeyText();
-			}
-		} else {
-			prod = shipment.getItem().getKeyText();
-		}
-
-		return prod;
 	}
 
 	/**
