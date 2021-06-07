@@ -817,9 +817,6 @@ public class MapControl implements IMapControl {
 	@Inject
 	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY)
 	private boolean geocodeIgnoreQuality;
-	@Inject
-	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_GEOCODING_IGNORE_QUALITY_VALUE)
-	private Integer geocodeIgnoreQualityValue;
 
 	@Inject
 	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_MAX_SHIPMENTS_DISPATCHED_IN_AREA)
@@ -2169,10 +2166,8 @@ public class MapControl implements IMapControl {
 						for (IGeocodedAddress add : geo) {
 							if (foundGeo == null) {
 								foundGeo = add;
-							} else {
-								if (foundGeo.getHitProbability() < add.getHitProbability()) {
-									foundGeo = add;
-								}
+							} else if (foundGeo.getHitProbability() < add.getHitProbability()) {
+								foundGeo = add;
 							}
 						}
 					} else {
