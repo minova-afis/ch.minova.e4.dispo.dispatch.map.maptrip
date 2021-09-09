@@ -141,22 +141,24 @@ public class MapControl implements IMapControl {
 		return o == null ? null : (o.toString().trim().isEmpty() ? null : o.toString().trim());
 	}
 
+	// FIXME gibt es auch noch in MapControlPart
 	private static String getProductText(OpenDeliveryBean shipment, boolean showProductDescription) {
-		String prod = null;
-
 		if (showProductDescription) {
+			// Produktbeschreibung spezifisch für diese Lieferung
 			String prodDesc = shipment.getItemDescription();
 			if (prodDesc != null && prodDesc.trim().length() > 0) {
-				prod = prodDesc;
-			} else {
-				// Wohl leer, nehmen wir den Matchcode
-				prod = shipment.getItem().getKeyText();
+				return prodDesc;
 			}
-		} else {
-			prod = shipment.getItem().getKeyText();
+
+			// Produktbeschreibung
+			prodDesc = shipment.getItem().getDescription();
+			if (prodDesc != null && prodDesc.trim().length() > 0) {
+				return prodDesc;
+			}
 		}
 
-		return prod;
+		// ansonsten nehmen wir den Matchcode
+		return shipment.getItem().getKeyText();
 	}
 
 	/**
