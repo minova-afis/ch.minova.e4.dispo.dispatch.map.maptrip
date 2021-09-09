@@ -1974,6 +1974,11 @@ public class MapControl implements IMapControl {
 		builder.append(address.getPostalCode());
 		builder.append(" ");
 		builder.append(address.getCity());
+		// #53281: ggf. Ortsteil
+		String area = getNonEmptyStringOrNull(address.getArea());
+		if (area != null) {
+			builder.append(" / ").append(area);
+		}
 		builder.append("\r\n");
 		builder.append(translationService.translate("tCustomer", null));
 		builder.append(": ");
