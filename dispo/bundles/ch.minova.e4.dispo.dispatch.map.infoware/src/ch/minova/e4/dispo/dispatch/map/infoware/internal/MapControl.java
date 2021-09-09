@@ -2074,16 +2074,16 @@ public class MapControl implements IMapControl {
 			}
 		}
 
-		// nur für SuK
-		// if (shipment.getPackageQuantity() != null) {
-		// builder.append("\r\n");
-		// builder.append(Messages.getString("tItem.PackageQuantity"));
-		// builder.append(": ");
-		// NumberFormat nf = NumberFormat.getInstance();
-		// nf.setMinimumFractionDigits(3);
-		// nf.setMaximumFractionDigits(3);
-		// builder.append(nf.format(shipment.getPackageQuantity()));
-		// }
+		// #53281: Gebindeeinheit (nur für SuK)
+		if (shipment.getItem().getPackageQuantity2() != null) {
+			builder.append("\r\n");
+			builder.append(Messages.getString("tItem.PackageQuantity"));
+			builder.append(": ");
+			NumberFormat nf = NumberFormat.getInstance();
+			nf.setMinimumFractionDigits(3);
+			nf.setMaximumFractionDigits(3);
+			builder.append(nf.format(shipment.getItem().getPackageQuantity2()));
+		}
 
 		return builder.toString();
 	}
