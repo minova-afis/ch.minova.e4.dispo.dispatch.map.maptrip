@@ -3,6 +3,7 @@ package ch.minova.e4.dispo.dispatch.map.infoware.internal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -139,6 +140,21 @@ public class MapControl implements IMapControl {
 
 	private static String getNonEmptyStringOrNull(Object o) {
 		return o == null ? null : (o.toString().trim().isEmpty() ? null : o.toString().trim());
+	}
+
+	/**
+	 * Formatiert die Zeit als String.
+	 * 
+	 * @param time
+	 * @return Falls keine / eine ungültige Zeit (00:00) übergeben wurde, wird null zurückgegeben
+	 * @since 11.2.2
+	 */
+	private static String getValidTimeStringOrNull(LocalTime time) {
+		String sTime = ValueFormatter.toString(ValueFormatType.SHORT_TIME, time, null);
+		if (sTime.isEmpty() || sTime.equals("00:00")) {
+			return null;
+		}
+		return sTime;
 	}
 
 	// FIXME gibt es auch noch in MapControlPart
@@ -2005,16 +2021,19 @@ public class MapControl implements IMapControl {
 		}
 
 		if (shipment.isShipment()) {
-			if (((Shipment) shipment).getTimeFrom() != null) {
+			String timeFrom = getValidTimeStringOrNull(shipment.getTimeFrom());
+			String timeUntil = getValidTimeStringOrNull(shipment.getTimeUntil());
+
+			if (timeFrom != null) {
 				builder.append(", ");
-				builder.append(ValueFormatter.toString(ValueFormatType.SHORT_TIME, ((Shipment) shipment).getTimeFrom(), null));
+				builder.append(timeFrom);
 				builder.append(" - ");
 			}
-			if (((Shipment) shipment).getTimeUntil() != null) {
-				if (((Shipment) shipment).getTimeFrom() == null) {
+			if (timeUntil != null) {
+				if (timeFrom == null) {
 					builder.append(", ");
 				}
-				builder.append(ValueFormatter.toString(ValueFormatType.SHORT_TIME, ((Shipment) shipment).getTimeUntil(), null));
+				builder.append(timeUntil);
 			}
 		}
 
