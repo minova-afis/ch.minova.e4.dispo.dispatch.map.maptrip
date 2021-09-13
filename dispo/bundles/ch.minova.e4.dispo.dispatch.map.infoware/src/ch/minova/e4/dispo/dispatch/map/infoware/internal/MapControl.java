@@ -869,6 +869,7 @@ public class MapControl implements IMapControl {
 	private MapExtractedLocationListener extractionListener;
 
 	private String itemGroupFilter;
+	private String orderReceiverFilter;
 
 	public MapControl() {
 		init();
@@ -1118,6 +1119,16 @@ public class MapControl implements IMapControl {
 	public void filterByItemGroup(@Optional @Named(DispoDispatchEventTopics.DISPATCH_CONTEXT_FILTER_ITEMGROUP) String itemGroup) {
 		if (this.itemGroupFilter != itemGroup) {
 			this.itemGroupFilter = itemGroup;
+			if (this.mapImages != null && !this.mapImages.isEmpty() && this.map != null) {
+				redrawMapImages(false);
+			}
+		}
+	}
+
+	@Inject
+	public void filterByOrderReceiver(@Optional @Named(DispoDispatchEventTopics.DISPATCH_CONTEXT_FILTER_ORDERRECEIVER) String orderReceiver) {
+		if (this.orderReceiverFilter != orderReceiver) {
+			this.orderReceiverFilter = orderReceiver;
 			if (this.mapImages != null && !this.mapImages.isEmpty() && this.map != null) {
 				redrawMapImages(false);
 			}
@@ -1672,6 +1683,11 @@ public class MapControl implements IMapControl {
 						if (!matches) {
 							return false;
 						}
+					}
+				}
+				if (this.orderReceiverFilter != null) {
+					if (od.getOrderReceiver() != null && !od.getOrderReceiver().getKeyText().equalsIgnoreCase(this.orderReceiverFilter)) {
+						return false;
 					}
 				}
 			}
