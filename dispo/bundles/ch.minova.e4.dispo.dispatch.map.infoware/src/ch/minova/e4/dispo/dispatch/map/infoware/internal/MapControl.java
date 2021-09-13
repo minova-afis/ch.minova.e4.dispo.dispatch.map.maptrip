@@ -868,6 +868,8 @@ public class MapControl implements IMapControl {
 
 	private MapExtractedLocationListener extractionListener;
 
+	private String itemGroupFilter;
+
 	public MapControl() {
 		init();
 	}
@@ -1109,6 +1111,16 @@ public class MapControl implements IMapControl {
 			}
 		} else {
 			resetMap();
+		}
+	}
+
+	@Inject
+	public void filterByItemGroup(@Optional @Named(DispoDispatchEventTopics.DISPATCH_CONTEXT_FILTER_ITEMGROUP) String itemGroup) {
+		if (this.itemGroupFilter != itemGroup) {
+			this.itemGroupFilter = itemGroup;
+			if (this.mapImages != null && !this.mapImages.isEmpty() && this.map != null) {
+				redrawMapImages(false);
+			}
 		}
 	}
 
@@ -1647,6 +1659,21 @@ public class MapControl implements IMapControl {
 			// nur Lieferaufträge von heute (Plandatum)
 			if (showAllocatedShipmentForToday && shipment.getTrip() != null && !shipment.getTrip().getScheduledDate().equals(this.scheduledDate)) {
 				return false;
+			}
+
+			// #53321: ggf. weitere Filter
+			if (shipment.getTrip() != null) {
+				if (this.itemGroupFilter != null) {
+					if (od.getItem() != null && od.getItem().getItemGroups() != null && !od.getItem().getItemGroups().isEmpty()) {
+						boolean matches = false;
+						for (String s : od.getItem().getItemGroups()) {
+							matches |= this.itemGroupFilter.equalsIgnoreCase(s);
+						}
+						if (!matches) {
+							return false;
+						}
+					}
+				}
 			}
 		}
 		return true;
