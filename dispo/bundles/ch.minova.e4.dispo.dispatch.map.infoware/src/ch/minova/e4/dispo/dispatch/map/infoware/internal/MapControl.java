@@ -1815,31 +1815,10 @@ public class MapControl implements IMapControl {
 						}
 					}
 				}
-			});
-			infoTable.addMouseListener(new MouseAdapter() {
-				@Override
-				public void mouseDown(MouseEvent e) {
-					try {
-						TableItem item = infoTable.getSelection()[0];
-						if (listener != null && item.getData() instanceof Integer) {
-							// TODO hier muss noch die Tour rausgefiltert werdern
-							Integer shipmentKey = (Integer) item.getData();
-							Shipment shipment = DispoModelCache.getInstance().getShipment(shipmentKey);
-							if (shipment != null && shipment.getTrip() != null) {
-								broker.post(DispoDispatchEventTopics.DISPATCH_SHOW_TRIP, shipment.getTrip());
-								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRUCK, shipment.getTrip().getTruck().getVehicle());
-								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, null);
-								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP, shipment.getTrip());
-								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_SELECT_TRIP, null);
-								context.getParent().set(DispoDispatchEventTopics.DISPATCH_CONTEXT_SELECT_TRIP, shipment.getTrip());
-							}
-						}
-					} catch (ArrayIndexOutOfBoundsException ex) {
-						Log.debug(this, "MouseDown: infottable disposed");
-						hideShipmentInfos();
-					}
 
-				}
+				// #53302: brauchen wir nicht, das macht der SelectionListener
+				@Override
+				public void mouseDown(MouseEvent e) {}
 			});
 			infoTable.addKeyListener(new KeyAdapter() {
 				@Override
