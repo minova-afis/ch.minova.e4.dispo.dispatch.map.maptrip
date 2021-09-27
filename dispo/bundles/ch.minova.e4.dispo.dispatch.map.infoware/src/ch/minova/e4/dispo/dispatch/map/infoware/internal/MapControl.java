@@ -575,7 +575,14 @@ public class MapControl implements IMapControl {
 										if (images.distortionLines.containsKey(point)) {
 											// Wir müssen den Punkt verschieben
 											DistortionLine distortionLine = images.distortionLines.get(point);
-											int index = distortionLine.indexes[distortionLine.providers.indexOf(geocodedImage)];
+											// Race Condition? NullPointerException abfangen
+											int index = 0;
+											try {
+												index = distortionLine.indexes[distortionLine.providers.indexOf(geocodedImage)];
+											} catch (Exception ex) {
+												String message = ex.getMessage() != null ? ex.getMessage() : "NullPointerException";
+												Log.warn(this, "Konnte Index für Verzerrung nicht ermitteln: " + message);
+											}
 											if (index > 0) {
 												point = DistancesAndAngles.calculateEndPoint(point.x, point.y, index * distortionDistance, distortionAngle);
 											}
