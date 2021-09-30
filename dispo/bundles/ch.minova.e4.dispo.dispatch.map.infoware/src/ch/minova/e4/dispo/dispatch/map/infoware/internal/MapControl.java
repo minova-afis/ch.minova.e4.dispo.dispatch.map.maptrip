@@ -219,7 +219,7 @@ public class MapControl implements IMapControl {
 		 * Zeichnet das Bild des Providers an der dafür vorgesehenen Position
 		 * 
 		 * @param gc
-		 *            Zielort des zeichnens
+		 *            Zielort des Zeichnens
 		 */
 		public void draw(GC gc) {
 			int lineLength = -1;
@@ -1386,6 +1386,14 @@ public class MapControl implements IMapControl {
 					continue;
 				}
 				if (distortion) {
+					Object object = ((GeocodedImageProvider) geo).getInfos().get("SOURCE");
+					if (object instanceof Shipment) {
+						Shipment shipment = (Shipment) object;
+						// #53472: wenn es nicht angezeigt wird, brauchen wir auch keine Verzerrung
+						if (!checkIfToBeShown(shipment, shipment.isAllocated())) {
+							continue;
+						}
+					}
 					DistortionLine line = null;
 					if (distortionLines.containsKey(p)) {
 						line = distortionLines.get(p);
