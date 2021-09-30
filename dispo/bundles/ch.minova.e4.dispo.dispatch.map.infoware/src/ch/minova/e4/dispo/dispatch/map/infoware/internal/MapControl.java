@@ -1523,8 +1523,12 @@ public class MapControl implements IMapControl {
 	}
 
 	protected boolean centerOnMercator(int mercatorX, int mercatorY) {
+		if (controller == null) {
+			// dann können wir nichts tun
+			return false;
+		}
 		if (controller.getMapCenterX() == mercatorX && controller.getMapCenterY() == mercatorY && controller.getMapDistanceX() == mapZoomLatitude) {
-			// Optimierung
+			// ist bereits optimal
 			return false;
 		}
 		controller.setMapCenter(mercatorX, mercatorY);
