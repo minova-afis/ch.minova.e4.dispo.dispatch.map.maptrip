@@ -33,6 +33,7 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DropTarget;
 import org.eclipse.swt.dnd.DropTargetListener;
@@ -668,6 +669,8 @@ public class MapControl implements IMapControl {
 				if (rectangle == null) {
 					takeShot(e.gc);
 				}
+			} catch (NullPointerException | SWTException | IllegalArgumentException ex) {
+				Log.warn(this, "Exception in paintControl(): " + ex.getLocalizedMessage());
 			} finally {
 				painting = false;
 			}
