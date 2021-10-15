@@ -26,7 +26,6 @@ import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChange
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.core.di.extensions.Preference;
-import org.eclipse.e4.core.services.events.IEventBroker;
 import org.eclipse.e4.core.services.translation.TranslationService;
 import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.jface.dialogs.Dialog;
@@ -50,7 +49,6 @@ import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Color;
@@ -73,8 +71,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.swt.widgets.ToolBar;
-import org.eclipse.swt.widgets.ToolItem;
 import org.osgi.service.prefs.BackingStoreException;
 
 import ch.minova.dispo.dispatch.map.beans.GeocodableAddressWithSource;
@@ -507,15 +503,12 @@ public class MapControl implements IMapControl {
 	private class MapPaintListener implements PaintListener {
 		private boolean breakOut = false;
 		private boolean painting = false;
-		private Image mapImage;
-		private MapViewPointController mVC;
 
 		// Initial mal mit leeren Listen und Maps füllen
 		public MapImages images = new MapImages(new LinkedList<IGeocoded>(), new HashMap<Point, MapControl.DistortionLine>(), new HashMap<IGeocoded, Point>());
 
 		@Override
 		public void paintControl(PaintEvent e) {
-//			if (painting || mVC == null || mVC.getImage() == null) {
 			if (painting) {
 				return;
 			}
@@ -609,8 +602,7 @@ public class MapControl implements IMapControl {
 									images.imagePoints.put(truck, locator);
 									Image image = registry.get(TRUCK_IMAGE);
 									Rectangle bounds = image.getBounds();
-									// Image erst später Zeichnen, erstmal die Linien
-									// und Texte!
+									// Image erst später Zeichnen, erstmal die Linien und Texte!
 									int centerx = locator.x - (bounds.width / 2);
 									int centery = locator.y - (bounds.height / 2);
 									truck.getDecorator().draw(e.gc, locator.x, locator.y);
@@ -689,22 +681,6 @@ public class MapControl implements IMapControl {
 			gc.copyArea(backgroundImage, 0, 0);
 			// map.addPaintListener(paintListener);
 		}
-
-		public Image getMapImage() {
-			return mapImage;
-		}
-
-		public void setMapImage(Image mapImage) {
-			this.mapImage = mapImage;
-		}
-
-		public MapViewPointController getmVC() {
-			return mVC;
-		}
-
-		public void setmVC(MapViewPointController mVC) {
-			this.mVC = mVC;
-		}
 	}
 
 	// Standard immer 0
@@ -731,8 +707,8 @@ public class MapControl implements IMapControl {
 	@Inject
 	private IEclipseContext context;
 
-	@Inject
-	private IEventBroker broker;
+//	@Inject
+//	private IEventBroker broker;
 
 	@Inject
 	@Optional
@@ -915,107 +891,27 @@ public class MapControl implements IMapControl {
 
 	@Override
 	public void createMap(Composite parentComposite, TranslationService service, boolean extractable, boolean showToolbar) {
-		this.parentComposite = parentComposite;
-		this.translationService = service;
-		this.parent = new Composite(parentComposite, SWT.NONE);
-//		this.parent = new Composite(parentComposite, SWT.NO_BACKGROUND);
-		GridLayout gridLayout = new GridLayout(1, false);
-		this.parent.setLayout(gridLayout);
-
-		parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-		ToolBar toolbar = new ToolBar(parent, SWT.NONE);
-		toolbar.setLayoutData(new GridData(SWT.FILL, SWT.DEFAULT, true, false));
-		createToolBar(service, toolbar);
-		if (showToolbar) {
-			parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		}
-
-//		map = new Canvas(parent, SWT.NO_BACKGROUND);
-		map = new Canvas(parent, SWT.NONE);
-		map.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-		map.addControlListener(new MapResizeListener(parentComposite.getShell()));
-		map.addPaintListener(paintListener);
-		controller = new MapViewPointController(this);
-		// context.getParent().set(MapViewPointController.class, controller);
-		adapter = new MapControlMouseAdapter(this, controller);
-//		paintListener.setmVC(controller);
-		// jetzt sind wir fertig - inject ganz oben, um die Helper zu informieren
-		// das wird jetzt an eine andere Stelle gesetzt als es ursprünglich lag, es ist
-		// aber dasselbe Objekt
-		// this.context.getParent().getParent().set(IMapControl.class, null);
-		// this.context.getParent().getParent().set(IMapControl.class, this);
-	}
-
-	private void createToolBar(final TranslationService service, ToolBar toolbar) {
-		ToolItem itemZoomIn = new ToolItem(toolbar, SWT.NONE);
-		itemZoomIn.setImage(Activator.getImageRegistry().get(MapImageConstants.MAPIMAGES_ZOOM_IN));
-		itemZoomIn.setToolTipText(service.translate("@Dispo.Dispatch.MapSectionEnlarge", null));
-		itemZoomIn.addSelectionListener(new SelectionListener() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				// DO SOMETHING
-				controller.zoomIn();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// DO NOTHING
-			}
-		});
-		ToolItem itemZoomOut = new ToolItem(toolbar, SWT.NONE);
-		itemZoomOut.setImage(Activator.getImageRegistry().get(MapImageConstants.MAPIMAGES_ZOOM_OUT));
-		itemZoomOut.setToolTipText(service.translate("@Dispo.Dispatch.MapSectionScaleDown", null));
-		itemZoomOut.addSelectionListener(new SelectionListener() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				// DO SOMETHING
-				controller.zoomOut();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// DO NOTHING
-			}
-		});
-		ToolItem itemZoomFull = new ToolItem(toolbar, SWT.NONE);
-		itemZoomFull.setImage(Activator.getImageRegistry().get(MapImageConstants.MAPIMAGES_ZOOM_FULL_EXTENT));
-		itemZoomFull.setToolTipText(service.translate("@Dispo.Dispatch.ShowWholeMap", null));
-		itemZoomFull.addSelectionListener(new SelectionListener() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				// DO SOMETHING
-				controller.zoomFullExtent();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// DO NOTHING
-			}
-		});
+		// die Toolbar wird jetzt über das Application Model erzeugt
+		createMap(parentComposite, service, extractable);
 	}
 
 	@Override
 	public void createMap(Composite parentComposite, TranslationService service, boolean extractable) {
 		this.parentComposite = parentComposite;
 		this.translationService = service;
-		this.parent = new Composite(parentComposite, SWT.NONE);
-//		this.parent = new Composite(parentComposite, SWT.NO_BACKGROUND);
+		this.parent = new Composite(parentComposite, SWT.NONE); // SWT.NO_BACKGROUND?
+
 		GridLayout gridLayout = new GridLayout(1, false);
 		this.parent.setLayout(gridLayout);
 
 		parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
-//		map = new Canvas(parent, SWT.NO_BACKGROUND);
-		map = new Canvas(parent, SWT.NONE);
-
+		map = new Canvas(parent, SWT.NONE); // SWT.NO_BACKGROUND?
 		map.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
 		map.addControlListener(new MapResizeListener(parentComposite.getShell()));
 		map.addPaintListener(paintListener);
 		controller = new MapViewPointController(this);
-//		paintListener.setmVC(controller);
 		context.getParent().set(MapViewPointController.class, controller);
 		adapter = new MapControlMouseAdapter(this, controller);
 		if (extractable && initialExtracted) {
