@@ -63,6 +63,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+
 import ch.minova.dispo.dispatch.map.beans.GeocodableAddressWithSource;
 import ch.minova.dispo.dispatch.map.beans.GeocodedAddressWithSource;
 import ch.minova.dispo.dispatch.map.beans.GeocodedLocator;
