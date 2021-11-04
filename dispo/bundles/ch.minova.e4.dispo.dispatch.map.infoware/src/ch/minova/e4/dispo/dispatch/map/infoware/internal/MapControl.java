@@ -17,24 +17,16 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.preferences.ConfigurationScope;
-import org.eclipse.core.runtime.preferences.IEclipsePreferences;
-import org.eclipse.core.runtime.preferences.IEclipsePreferences.INodeChangeListener;
-import org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener;
-import org.eclipse.core.runtime.preferences.IEclipsePreferences.NodeChangeEvent;
-import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.core.di.extensions.Preference;
-import org.eclipse.e4.core.services.events.IEventBroker;
 import org.eclipse.e4.core.services.translation.TranslationService;
 import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.dnd.DND;
-import org.eclipse.swt.dnd.DropTarget;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.dnd.DropTargetListener;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.ControlEvent;
@@ -49,7 +41,6 @@ import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Color;
@@ -72,9 +63,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.swt.widgets.ToolBar;
-import org.eclipse.swt.widgets.ToolItem;
-import org.osgi.service.prefs.BackingStoreException;
 
 import ch.minova.dispo.dispatch.map.beans.GeocodableAddressWithSource;
 import ch.minova.dispo.dispatch.map.beans.GeocodedAddressWithSource;
@@ -218,7 +206,7 @@ public class MapControl implements IMapControl {
 		 * Zeichnet das Bild des Providers an der dafür vorgesehenen Position
 		 * 
 		 * @param gc
-		 *            Zielort des zeichnens
+		 *            Zielort des Zeichnens
 		 */
 		public void draw(GC gc) {
 			int lineLength = -1;
@@ -282,41 +270,6 @@ public class MapControl implements IMapControl {
 		 */
 		protected void setText(String text) {
 			this.text = text;
-		}
-	}
-
-	/**
-	 * Hört auf Änderungen an der Konfiguration
-	 * 
-	 * @author bohlender
-	 */
-	private class MapPreferencesListener implements IPreferenceChangeListener, INodeChangeListener {
-		@Override
-		public void preferenceChange(PreferenceChangeEvent event) {
-			if (event.getKey().equals(PreferenceIDs.MAP_ZOOM_LATITUDE)) {
-				mapZoomLatitude = Integer.parseInt((String) event.getNewValue());
-			}
-			if (event.getKey().equals(PreferenceIDs.MAP_RESET)) {
-				if (isExtracted()) {
-					parent.getDisplay().asyncExec(() -> shell.setLocation(0, 0));
-				} else {
-					extractedShellX = 0;
-					extractedShellY = 0;
-					extractedShellHeight = 0;
-					extractedShellWidth = 0;
-					extractedMaximized = false;
-				}
-			}
-		}
-
-		@Override
-		public void added(NodeChangeEvent event) {
-			// refreshMapAreas();
-		}
-
-		@Override
-		public void removed(NodeChangeEvent event) {
-			// refreshMapAreas();
 		}
 	}
 
@@ -444,31 +397,6 @@ public class MapControl implements IMapControl {
 	}
 
 	/**
-	 * Listener, der auf Position, Größe und Maximiert-Status einer extrahierten Karte hört
-	 * 
-	 * @author bohlender
-	 */
-	private class MapExtractedLocationListener implements ControlListener {
-		@Override
-		public void controlMoved(ControlEvent e) {
-			extractedShellX = ((Shell) e.widget).getLocation().x;
-			extractedShellY = ((Shell) e.widget).getLocation().y;
-			extractedShellWidth = ((Shell) e.widget).getSize().x;
-			extractedShellHeight = ((Shell) e.widget).getSize().y;
-			extractedMaximized = ((Shell) e.widget).getMaximized();
-		}
-
-		@Override
-		public void controlResized(ControlEvent e) {
-			extractedShellX = ((Shell) e.widget).getLocation().x;
-			extractedShellY = ((Shell) e.widget).getLocation().y;
-			extractedShellWidth = ((Shell) e.widget).getSize().x;
-			extractedShellHeight = ((Shell) e.widget).getSize().y;
-			extractedMaximized = ((Shell) e.widget).getMaximized();
-		}
-	}
-
-	/**
 	 * Platzhalter-Objekt mit vorverarbeiteten Informationen für die Karte
 	 * 
 	 * @author bohlender
@@ -506,15 +434,12 @@ public class MapControl implements IMapControl {
 	private class MapPaintListener implements PaintListener {
 		private boolean breakOut = false;
 		private boolean painting = false;
-		private Image mapImage;
-		private MapViewPointController mVC;
 
 		// Initial mal mit leeren Listen und Maps füllen
 		public MapImages images = new MapImages(new LinkedList<IGeocoded>(), new HashMap<Point, MapControl.DistortionLine>(), new HashMap<IGeocoded, Point>());
 
 		@Override
 		public void paintControl(PaintEvent e) {
-//			if (painting || mVC == null || mVC.getImage() == null) {
 			if (painting) {
 				return;
 			}
@@ -615,8 +540,7 @@ public class MapControl implements IMapControl {
 									images.imagePoints.put(truck, locator);
 									Image image = registry.get(TRUCK_IMAGE);
 									Rectangle bounds = image.getBounds();
-									// Image erst später Zeichnen, erstmal die Linien
-									// und Texte!
+									// Image erst später Zeichnen, erstmal die Linien und Texte!
 									int centerx = locator.x - (bounds.width / 2);
 									int centery = locator.y - (bounds.height / 2);
 									truck.getDecorator().draw(e.gc, locator.x, locator.y);
@@ -675,6 +599,8 @@ public class MapControl implements IMapControl {
 				if (rectangle == null) {
 					takeShot(e.gc);
 				}
+			} catch (NullPointerException | SWTException | IllegalArgumentException ex) {
+				Log.warn(this, "Exception in paintControl(): " + ex.getLocalizedMessage());
 			} finally {
 				painting = false;
 			}
@@ -692,22 +618,6 @@ public class MapControl implements IMapControl {
 			// map.removePaintListener(paintListener);
 			gc.copyArea(backgroundImage, 0, 0);
 			// map.addPaintListener(paintListener);
-		}
-
-		public Image getMapImage() {
-			return mapImage;
-		}
-
-		public void setMapImage(Image mapImage) {
-			this.mapImage = mapImage;
-		}
-
-		public MapViewPointController getmVC() {
-			return mVC;
-		}
-
-		public void setmVC(MapViewPointController mVC) {
-			this.mVC = mVC;
 		}
 	}
 
@@ -734,9 +644,6 @@ public class MapControl implements IMapControl {
 
 	@Inject
 	private IEclipseContext context;
-
-	@Inject
-	private IEventBroker broker;
 
 	@Inject
 	@Optional
@@ -784,11 +691,6 @@ public class MapControl implements IMapControl {
 	private Integer showtruckKey;
 	private Integer showtruckPoolKey;
 	private LocalDate scheduledDate;
-
-	private DropTargetListener dropTargetListener;
-	private Transfer[] transferTypes;
-	private DropTarget mapDropTarget;
-	// private FontData fontData;
 
 	private final MapPaintListener paintListener = new MapPaintListener();
 	private boolean drawTrip;
@@ -851,29 +753,10 @@ public class MapControl implements IMapControl {
 	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.DRAW_MAP_DELAY)
 	private Integer drawMapDelay;
 
-	// ******* Einstellungen, die nicht über Inject kommen
-	// Listener für sonstige
-	private MapPreferencesListener prefChange;
-
-	// Areas
-	private IEclipsePreferences areaprefs;
-
 	// aktueller Zoom
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_ZOOM_LATITUDE)
 	private int mapZoomLatitude = 5000;
-
-	// *** Map Extraction
-	private boolean parentClosed = false;
-
-	private boolean extracted = false;
-	private boolean initialExtracted = false;
-
-	private int extractedShellX = 0;
-	private int extractedShellY = 0;
-	private int extractedShellWidth = 0;
-	private int extractedShellHeight = 0;
-	private boolean extractedMaximized = false;
-
-	private MapExtractedLocationListener extractionListener;
 
 	private String itemGroupFilter;
 	private String orderReceiverFilter;
@@ -884,21 +767,6 @@ public class MapControl implements IMapControl {
 
 	@Override
 	public void init() {
-		// TODO können jetzt injected werden
-		IEclipsePreferences mapPrefsNode = ConfigurationScope.INSTANCE.getNode(Activator.PLUGIN_ID);
-		prefChange = new MapPreferencesListener();
-		mapPrefsNode.addPreferenceChangeListener(prefChange);
-
-		areaprefs = ConfigurationScope.INSTANCE.getNode(PreferenceIDs.MAPAREA_PREFERENCES_CONTEXT);
-		areaprefs.addNodeChangeListener(prefChange);
-		extractedShellHeight = mapPrefsNode.getInt(PreferenceIDs.MAP_HEIGHT, 0);
-		extractedShellWidth = mapPrefsNode.getInt(PreferenceIDs.MAP_WIDTH, 0);
-		extractedShellX = mapPrefsNode.getInt(PreferenceIDs.MAP_LOCATION_X, 0);
-		extractedShellY = mapPrefsNode.getInt(PreferenceIDs.MAP_LOCATION_Y, 0);
-		extractedMaximized = mapPrefsNode.getBoolean(PreferenceIDs.MAP_EXTRACTED_MAXIMIZED, false);
-		initialExtracted = mapPrefsNode.getBoolean(PreferenceIDs.MAP_EXTRACTED, false);
-		mapZoomLatitude = mapPrefsNode.getInt(PreferenceIDs.MAP_ZOOM_LATITUDE, 5000);
-
 		if (registry.get(TRUCK_IMAGE) == null) {
 			registry.put(TRUCK_IMAGE, Activator.getImageRegistry().getDescriptor(MapImageConstants.MAPIMAGES_TRUCK));
 		}
@@ -919,207 +787,39 @@ public class MapControl implements IMapControl {
 
 	@Override
 	public void createMap(Composite parentComposite, TranslationService service, boolean extractable, boolean showToolbar) {
-		this.parentComposite = parentComposite;
-		this.translationService = service;
-		this.parent = new Composite(parentComposite, SWT.NONE);
-//		this.parent = new Composite(parentComposite, SWT.NO_BACKGROUND);
-		GridLayout gridLayout = new GridLayout(1, false);
-		this.parent.setLayout(gridLayout);
-
-		parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-		ToolBar toolbar = new ToolBar(parent, SWT.NONE);
-		toolbar.setLayoutData(new GridData(SWT.FILL, SWT.DEFAULT, true, false));
-		createToolBar(service, toolbar);
-		if (showToolbar) {
-			parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		}
-
-//		map = new Canvas(parent, SWT.NO_BACKGROUND);
-		map = new Canvas(parent, SWT.NONE);
-		map.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-		map.addControlListener(new MapResizeListener(parentComposite.getShell()));
-		map.addPaintListener(paintListener);
-		controller = new MapViewPointController(this);
-		// context.getParent().set(MapViewPointController.class, controller);
-		adapter = new MapControlMouseAdapter(this, controller);
-//		paintListener.setmVC(controller);
-		// jetzt sind wir fertig - inject ganz oben, um die Helper zu informieren
-		// das wird jetzt an eine andere Stelle gesetzt als es ursprünglich lag, es ist
-		// aber dasselbe Objekt
-		// this.context.getParent().getParent().set(IMapControl.class, null);
-		// this.context.getParent().getParent().set(IMapControl.class, this);
-	}
-
-	private void createToolBar(final TranslationService service, ToolBar toolbar) {
-		ToolItem itemZoomIn = new ToolItem(toolbar, SWT.NONE);
-		itemZoomIn.setImage(Activator.getImageRegistry().get(MapImageConstants.MAPIMAGES_ZOOM_IN));
-		itemZoomIn.setToolTipText(service.translate("@Dispo.Dispatch.MapSectionEnlarge", null));
-		itemZoomIn.addSelectionListener(new SelectionListener() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				// DO SOMETHING
-				controller.zoomIn();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// DO NOTHING
-			}
-		});
-		ToolItem itemZoomOut = new ToolItem(toolbar, SWT.NONE);
-		itemZoomOut.setImage(Activator.getImageRegistry().get(MapImageConstants.MAPIMAGES_ZOOM_OUT));
-		itemZoomOut.setToolTipText(service.translate("@Dispo.Dispatch.MapSectionScaleDown", null));
-		itemZoomOut.addSelectionListener(new SelectionListener() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				// DO SOMETHING
-				controller.zoomOut();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// DO NOTHING
-			}
-		});
-		ToolItem itemZoomFull = new ToolItem(toolbar, SWT.NONE);
-		itemZoomFull.setImage(Activator.getImageRegistry().get(MapImageConstants.MAPIMAGES_ZOOM_FULL_EXTENT));
-		itemZoomFull.setToolTipText(service.translate("@Dispo.Dispatch.ShowWholeMap", null));
-		itemZoomFull.addSelectionListener(new SelectionListener() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				// DO SOMETHING
-				controller.zoomFullExtent();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// DO NOTHING
-			}
-		});
+		// die Toolbar wird jetzt über das Application Model erzeugt
+		createMap(parentComposite, service, extractable);
 	}
 
 	@Override
 	public void createMap(Composite parentComposite, TranslationService service, boolean extractable) {
 		this.parentComposite = parentComposite;
 		this.translationService = service;
-		this.parent = new Composite(parentComposite, SWT.NONE);
-//		this.parent = new Composite(parentComposite, SWT.NO_BACKGROUND);
+		this.parent = new Composite(parentComposite, SWT.NONE); // SWT.NO_BACKGROUND?
+
 		GridLayout gridLayout = new GridLayout(1, false);
 		this.parent.setLayout(gridLayout);
 
 		parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
-//		map = new Canvas(parent, SWT.NO_BACKGROUND);
-		map = new Canvas(parent, SWT.NONE);
-
+		map = new Canvas(parent, SWT.NONE); // SWT.NO_BACKGROUND?
 		map.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
 		map.addControlListener(new MapResizeListener(parentComposite.getShell()));
 		map.addPaintListener(paintListener);
 		controller = new MapViewPointController(this);
-//		paintListener.setmVC(controller);
 		context.getParent().set(MapViewPointController.class, controller);
 		adapter = new MapControlMouseAdapter(this, controller);
-		if (extractable && initialExtracted) {
-			parent.getDisplay().asyncExec(this::extractMap);
-		}
+//		if (extractable && initialExtracted) {
+//			parent.getDisplay().asyncExec(this::extractMap);
+		// #51952: macht jetzt evtl. der OpenMapWindowHandler
+//		}
 
 		// jetzt sind wir fertig - inject ganz oben, um die Helper zu informieren
 		// das wird jetzt an eine andere Stelle gesetzt als es ursprünglich lag, es ist
 		// aber dasselbe Objekt
 		this.context.getParent().getParent().set(IMapControl.class, null);
 		this.context.getParent().getParent().set(IMapControl.class, this);
-	}
-
-	protected void extractMap() {
-		if (!isExtracted()) {
-			boolean pack = false;
-			Point parentSize = parent.getSize();
-			shell = new Shell(parent.getDisplay(), SWT.BORDER | SWT.CLOSE | SWT.MIN | SWT.MAX | SWT.RESIZE);
-			shell.setLayout(new FillLayout());
-			shell.setText(translationService.translate("@Dispo.Dispatch.Group.Map", null));
-			shell.setImage(Activator.getImageRegistry().get(MapImageConstants.MAPIMAGES_MAP));
-			Composite container = new Composite(shell, SWT.NONE);
-			GridLayout layout = new GridLayout();
-			container.setLayout(layout);
-			extracted = reparentMap(container);
-			GridData layoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
-
-			if (extractedShellX == 0 && extractedShellY == 0 && extractedShellHeight == 0 && extractedShellWidth == 0) {
-				// Default initialisieren
-				layoutData.widthHint = parentSize.x;
-				layoutData.heightHint = parentSize.y;
-				pack = true;
-			}
-
-			parent.setLayoutData(layoutData);
-
-			container.addControlListener(new MapResizeListener(shell));
-			// extract.setToolTipText(service.translate("Dispo.Dispatch.Tooltip.CloseMapWindow",
-			// null));
-
-			parentComposite.addDisposeListener(e -> {
-				parentClosed = true;
-				if (!shell.isDisposed()) {
-					if (mapDropTarget != null && !mapDropTarget.isDisposed()) {
-						// Wir müssen den Listener hier lösen, da sonst ein
-						// DND-Error geworfen wird, sollte das Widget das
-						// nächste mal für DnD angemeldet werden
-						mapDropTarget.removeDropListener(dropTargetListener);
-						// mapDropTarget.dispose();
-						// mapDropTarget = null;
-					}
-					shell.close();
-				}
-			});
-
-			shell.addShellListener(new ShellAdapter() {
-				@Override
-				public void shellClosed(ShellEvent e) {
-					if (!parentClosed) {
-						resetMap();
-					}
-				}
-			});
-
-			// mapDropTarget = null;
-			if (transferTypes != null && dropTargetListener != null) {
-				if (mapDropTarget == null) {
-					mapDropTarget = new DropTarget(parent, DND.DROP_MOVE);
-					mapDropTarget.setTransfer(transferTypes);
-					mapDropTarget.addDropListener(dropTargetListener);
-				}
-			}
-
-			if (pack) {
-				shell.pack();
-				extractionListener = new MapExtractedLocationListener();
-				shell.addControlListener(extractionListener);
-			}
-			shell.open();
-			if (!pack) {
-				shell.setSize(extractedShellWidth, extractedShellHeight);
-				shell.setLocation(extractedShellX, extractedShellY);
-				shell.layout();
-				shell.setMaximized(extractedMaximized);
-				extractionListener = new MapExtractedLocationListener();
-				shell.addControlListener(extractionListener);
-			}
-
-			while (!shell.isDisposed()) {
-				if (!shell.getDisplay().readAndDispatch()) {
-					shell.getDisplay().sleep();
-				}
-			}
-
-			if (!shell.isDisposed()) {
-				shell.dispose();
-			}
-		} else {
-			resetMap();
-		}
 	}
 
 	@Inject
@@ -1213,17 +913,6 @@ public class MapControl implements IMapControl {
 		if (showAllocatedShipments || showAllocatedforObject) {
 			redrawMap(false, true);
 		}
-	}
-
-	private void resetMap() {
-		shell.removeControlListener(extractionListener);
-		extracted = !reparentMap(parentComposite);
-		// extract.setToolTipText(service.translate("@Dispo.Dispatch.Tooltip.OpenMapWindow", null));
-		shell.dispose();
-		parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		controller.setMapDistanceByX(controller.getMapDistanceX());
-		parentComposite.layout(true, true);
-		redrawMap(true);
 	}
 
 	@Override
@@ -1390,6 +1079,14 @@ public class MapControl implements IMapControl {
 					continue;
 				}
 				if (distortion) {
+					Object object = ((GeocodedImageProvider) geo).getInfos().get("SOURCE");
+					if (object instanceof Shipment) {
+						Shipment shipment = (Shipment) object;
+						// #53472: wenn es nicht angezeigt wird, brauchen wir auch keine Verzerrung
+						if (!checkIfToBeShown(shipment, shipment.isAllocated())) {
+							continue;
+						}
+					}
 					DistortionLine line = null;
 					if (distortionLines.containsKey(p)) {
 						line = distortionLines.get(p);
@@ -1484,19 +1181,7 @@ public class MapControl implements IMapControl {
 		if (parent != null && !parent.isDisposed()) {
 			parent.dispose();
 		}
-		IEclipsePreferences prefs = ConfigurationScope.INSTANCE.getNode(Activator.PLUGIN_ID);
-		prefs.removePreferenceChangeListener(prefChange);
-		prefs.putInt(PreferenceIDs.MAP_LOCATION_X, extractedShellX);
-		prefs.putInt(PreferenceIDs.MAP_LOCATION_Y, extractedShellY);
-		prefs.putInt(PreferenceIDs.MAP_WIDTH, extractedShellWidth);
-		prefs.putInt(PreferenceIDs.MAP_HEIGHT, extractedShellHeight);
-		prefs.putBoolean(PreferenceIDs.MAP_EXTRACTED, isExtracted());
-		prefs.putBoolean(PreferenceIDs.MAP_EXTRACTED_MAXIMIZED, extractedMaximized);
-		try {
-			prefs.flush();
-		} catch (BackingStoreException e) {
-			Log.err(this, e);
-		}
+
 		if (controller != null) {
 			controller.dispose();
 			controller = null;
@@ -1527,8 +1212,12 @@ public class MapControl implements IMapControl {
 	}
 
 	protected boolean centerOnMercator(int mercatorX, int mercatorY) {
+		if (controller == null) {
+			// dann können wir nichts tun
+			return false;
+		}
 		if (controller.getMapCenterX() == mercatorX && controller.getMapCenterY() == mercatorY && controller.getMapDistanceX() == mapZoomLatitude) {
-			// Optimierung
+			// ist bereits optimal
 			return false;
 		}
 		controller.setMapCenter(mercatorX, mercatorY);
@@ -2447,18 +2136,13 @@ public class MapControl implements IMapControl {
 
 	@Override
 	public void setDropTargetListener(Transfer[] types, DropTargetListener listener) {
-		this.transferTypes = types;
-		this.dropTargetListener = listener;
+		// #51952: wird wohl nicht mehr benötigt
 	}
 
 	@Override
 	public boolean isExtracted() {
-		// prüfen, ob Map wirklich extrahiert ist
-		if (this.shell == null || this.shell.isDisposed()) {
-			this.extracted = false;
-		}
-
-		return this.extracted;
+		// #51952: können wir hier nicht mehr herausfinden
+		return false;
 	}
 
 	@Override
@@ -2531,7 +2215,7 @@ public class MapControl implements IMapControl {
 
 	@Override
 	public void extractDispatchMap() {
-		extractMap();
+		// #51952: nicht mehr unterstützt
 	}
 
 	@Override
