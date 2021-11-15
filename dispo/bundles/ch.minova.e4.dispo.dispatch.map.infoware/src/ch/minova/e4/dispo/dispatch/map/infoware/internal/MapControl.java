@@ -824,7 +824,7 @@ public class MapControl implements IMapControl {
 		if (this.itemGroupFilter != itemGroup) {
 			this.itemGroupFilter = itemGroup;
 			if (this.filterDispatchedDeliveries && this.mapImages != null && !this.mapImages.isEmpty() && this.map != null) {
-				redrawMapImages(false);
+				redrawMap(true);
 			}
 		}
 	}
@@ -834,7 +834,7 @@ public class MapControl implements IMapControl {
 		if (this.orderReceiverFilter != orderReceiver) {
 			this.orderReceiverFilter = orderReceiver;
 			if (this.filterDispatchedDeliveries && this.mapImages != null && !this.mapImages.isEmpty() && this.map != null) {
-				redrawMapImages(false);
+				redrawMap(true);
 			}
 		}
 	}
