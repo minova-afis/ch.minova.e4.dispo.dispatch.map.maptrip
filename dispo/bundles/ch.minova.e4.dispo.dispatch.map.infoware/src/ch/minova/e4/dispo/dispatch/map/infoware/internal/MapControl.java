@@ -746,6 +746,10 @@ public class MapControl implements IMapControl {
 	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.DRAW_MAP_DELAY)
 	private Integer drawMapDelay;
 
+	@Inject
+	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_FILTER_DISPATCHED_DELIVERIES)
+	private boolean filterDispatchedDeliveries;
+
 	// aktueller Zoom
 	@Inject
 	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_ZOOM_LATITUDE)
@@ -819,7 +823,7 @@ public class MapControl implements IMapControl {
 	public void filterByItemGroup(@Optional @Named(DispoDispatchEventTopics.DISPATCH_CONTEXT_FILTER_ITEMGROUP) String itemGroup) {
 		if (this.itemGroupFilter != itemGroup) {
 			this.itemGroupFilter = itemGroup;
-			if (this.mapImages != null && !this.mapImages.isEmpty() && this.map != null) {
+			if (this.filterDispatchedDeliveries && this.mapImages != null && !this.mapImages.isEmpty() && this.map != null) {
 				redrawMapImages(false);
 			}
 		}
@@ -829,7 +833,7 @@ public class MapControl implements IMapControl {
 	public void filterByOrderReceiver(@Optional @Named(DispoDispatchEventTopics.DISPATCH_CONTEXT_FILTER_ORDERRECEIVER) String orderReceiver) {
 		if (this.orderReceiverFilter != orderReceiver) {
 			this.orderReceiverFilter = orderReceiver;
-			if (this.mapImages != null && !this.mapImages.isEmpty() && this.map != null) {
+			if (this.filterDispatchedDeliveries && this.mapImages != null && !this.mapImages.isEmpty() && this.map != null) {
 				redrawMapImages(false);
 			}
 		}
@@ -1363,7 +1367,7 @@ public class MapControl implements IMapControl {
 
 			// #53321: ggf. weitere Filter
 			if (shipment.getTrip() != null) {
-				if (this.itemGroupFilter != null) {
+				if (this.filterDispatchedDeliveries && this.itemGroupFilter != null) {
 					if (od.getItem() != null && od.getItem().getItemGroups() != null && !od.getItem().getItemGroups().isEmpty()) {
 						boolean matches = false;
 						for (String s : od.getItem().getItemGroups()) {
@@ -1374,7 +1378,7 @@ public class MapControl implements IMapControl {
 						}
 					}
 				}
-				if (this.orderReceiverFilter != null) {
+				if (this.filterDispatchedDeliveries && this.orderReceiverFilter != null) {
 					if (od.getOrderReceiver() != null && !od.getOrderReceiver().getKeyText().equalsIgnoreCase(this.orderReceiverFilter)) {
 						return false;
 					}
