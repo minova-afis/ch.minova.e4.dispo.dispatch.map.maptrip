@@ -1,0 +1,18 @@
+### Ignore ###
+bin/
+target/
+dest/
+**/.DS_Store
+**/.log
+**/.metadata/
+**/.polyglot.build.properties
+**/generated/java/source/
+# Wird von einem Eclipse-Plugin erstellt.
+**/.dbeaver/
+truckstar/net.minova.core/core/obj/Debug/
+# IntelliJ IDEA specific TODO gitignore.io
+**/*.iml
+.idea/
+/.recommenders/
+# Ignore meta files of DBeaver plugin for Eclipse.
+**/.dbeaver/
