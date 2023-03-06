@@ -10,12 +10,13 @@
 		<groupId>ch.minova.bundle</groupId>
 		<artifactId>ch.minova.parent</artifactId>
 		<version>10.3.0</version>
-		<relativePath>../../../core/releng/ch.minova.parent.bundle</relativePath>
+		
 	</parent>
 
 	<scm>
-		<connection>${scm-connection}</connection>
-		<developerConnection>${scm-connection}</developerConnection>
-		<tag>HEAD</tag>
-	</scm>
+      <developerConnection>scm:git:ssh://git@github.com/minova-afis/ch.minova.e4.dispo.dispatch.map.infoware.git</developerConnection>
+      <connection>scm:git:ssh://git@github.com/minova-afis/ch.minova.e4.dispo.dispatch.map.infoware.git</connection>
+      <url>ssh://git@github.com/minova-afis/ch.minova.e4.dispo.dispatch.map.infoware</url>
+      <tag>HEAD</tag>
+   </scm>
 </project>
