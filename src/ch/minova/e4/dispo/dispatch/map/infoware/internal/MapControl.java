@@ -489,38 +489,36 @@ public class MapControl implements IMapControl {
 								if (!checkIfToBeShown(shipment, allocated)) {
 									continue;
 								}
-								if (imageFilter == null || imageFilter.show(geocodedImage)) {
-									if (geocodedImage.getSelection().isSelected() || allocated) {
-										// Nach dem Refactoring sollten alle
-										// imagePoints schon bereits gerechent sein!
-										Point point = images.imagePoints.get(geo);
-										if (point == null) {
-											continue;
-										}
-										if (images.distortionLines.containsKey(point)) {
-											// Wir müssen den Punkt verschieben
-											DistortionLine distortionLine = images.distortionLines.get(point);
-											// Race Condition? NullPointerException abfangen
-											int index = 0;
-											try {
-												index = distortionLine.indexes[distortionLine.providers.indexOf(geocodedImage)];
-											} catch (Exception ex) {
-												String message = ex.getMessage() != null ? ex.getMessage() : "NullPointerException";
-												Log.warn(this, "Konnte Index für Verzerrung nicht ermitteln: " + message);
-											}
-											if (index > 0) {
-												point = DistancesAndAngles.calculateEndPoint(point.x, point.y, index * distortionDistance, distortionAngle);
-											}
-										}
-										if (geocodedImage.getDecorator() != null) {
-											geocodedImage.getDecorator().draw(e.gc, point.x, point.y);
-//											geocodedImage.getDecorator().draw(igc, point.x, point.y);
-										}
-										Image image = geocodedImage.getImage();
-										Rectangle rec = image.getBounds();
-										mapImages.add(new ImageOnMap(image, (point.x - (rec.width / 2)), (point.y - (rec.height / 2))));
-//										e.gc.drawImage(image, (point.x - (rec.width / 2)), (point.y - (rec.height / 2)));
+								if ((imageFilter == null || imageFilter.show(geocodedImage)) && (geocodedImage.getSelection().isSelected() || allocated)) {
+									// Nach dem Refactoring sollten alle
+									// imagePoints schon bereits gerechnet sein!
+									Point point = images.imagePoints.get(geo);
+									if (point == null) {
+										continue;
 									}
+									if (images.distortionLines.containsKey(point)) {
+										// Wir müssen den Punkt verschieben
+										DistortionLine distortionLine = images.distortionLines.get(point);
+										// Race Condition? NullPointerException abfangen
+										int index = 0;
+										try {
+											index = distortionLine.indexes[distortionLine.providers.indexOf(geocodedImage)];
+										} catch (Exception ex) {
+											String message = ex.getMessage() != null ? ex.getMessage() : "NullPointerException";
+											Log.warn(this, "Konnte Index für Verzerrung nicht ermitteln: " + message);
+										}
+										if (index > 0) {
+											point = DistancesAndAngles.calculateEndPoint(point.x, point.y, index * distortionDistance, distortionAngle);
+										}
+									}
+									if (geocodedImage.getDecorator() != null) {
+										geocodedImage.getDecorator().draw(e.gc, point.x, point.y);
+//											geocodedImage.getDecorator().draw(igc, point.x, point.y);
+									}
+									Image image = geocodedImage.getImage();
+									Rectangle rec = image.getBounds();
+									mapImages.add(new ImageOnMap(image, (point.x - (rec.width / 2)), (point.y - (rec.height / 2))));
+//										e.gc.drawImage(image, (point.x - (rec.width / 2)), (point.y - (rec.height / 2)));
 								}
 							} else if (geo instanceof GeocodedImageLocator) {
 								GeocodedImageLocator loc = (GeocodedImageLocator) geo;
@@ -531,7 +529,7 @@ public class MapControl implements IMapControl {
 								mapImages.add(new ImageOnMap(image, locator.x - (bounds.width / 2), locator.y - (bounds.height / 2)));
 //								e.gc.drawImage(image, locator.x - (bounds.width / 2), locator.y - (bounds.height / 2));
 							} else if (geo instanceof ITruckPosition) {
-								if (trucksSelected == true) {
+								if (trucksSelected) {
 									ITruckPosition truck = (ITruckPosition) geo;
 									// Koordinaten für Fahrzeuge IMMER neu rechnen,
 									// Caching macht hier Probleme!
@@ -550,7 +548,7 @@ public class MapControl implements IMapControl {
 //									e.gc.drawImage(image, centerx, centery);
 								}
 							} else if (geo instanceof IDepotPosition) {
-								if (tdepotsSelected == true) {
+								if (tdepotsSelected) {
 									IDepotPosition depot = (IDepotPosition) geo;
 									// Koordinaten für Fahrzeuge IMMER neu rechnen,
 									// Caching macht hier Probleme!
@@ -1007,8 +1005,8 @@ public class MapControl implements IMapControl {
 					if (!map.isDisposed()) {
 						BufferedDisplay.getDefault().asyncExec("drawMap", runnable, drawMapDelay);
 					}
-					// else es wird schon gezeichnet!
 				}
+				// else es wird schon gezeichnet!
 			}
 		}
 	}
@@ -1043,22 +1041,12 @@ public class MapControl implements IMapControl {
 				}
 			}
 			// An dieser Stelle werden die Positionen der Depot ein und ausgeblendet.
-			if (geo instanceof DepotPosition) {
-				if (!tdepotsSelected) {
-					if (p != null) {
-						imagePoints.remove(geo);
-					}
-					continue;
-				}
-			}
 			// An dieser Stelle werden die Positionen der Trucks ein und ausgeblendet.
-			if (geo instanceof TruckPosition) {
-				if (!trucksSelected) {
-					if (p != null) {
-						imagePoints.remove(geo);
-					}
-					continue;
+			if (((geo instanceof DepotPosition) && !tdepotsSelected) || ((geo instanceof TruckPosition) && !trucksSelected)) {
+				if (p != null) {
+					imagePoints.remove(geo);
 				}
+				continue;
 			}
 
 			if (geo instanceof GeocodedImageProvider) {
@@ -1109,22 +1097,16 @@ public class MapControl implements IMapControl {
 
 	private void handleGeocodedImageProvider(GeocodedImageProvider geo) {
 		Object object = geo.getInfos().get("");
-		if (object != null && object instanceof Shipment) {
+		if (object instanceof Shipment) {
 			Shipment shipment = (Shipment) object;
 			// #32593 markiert die 1. Lieferposition in den Komplimentärfarben.
-			if (shipment.getTrip() != null) {
-				if (geo.getDecorator() != null) {
-					if (shipment.isfirstShipmentOfTrip()) {
-						((TextDecorator) geo.getDecorator()).setBackground(getColorOfString(locatorRGBfirstPositionBackground));
-						((TextDecorator) geo.getDecorator()).setForeground(getColorOfString(locatorRGBfirstPositionForeground));
-					} else if (shipment.getTrip() != null) {
-						if (geo.getDecorator() != null) {
-							((TextDecorator) geo.getDecorator()).setBackground(getColorOfString(locatorRGBAllPositionBackground));
-							((TextDecorator) geo.getDecorator()).setForeground(getColorOfString(locatorRGBAllPositionForeground));
-						} else {
-
-						}
-					}
+			if ((shipment.getTrip() != null) && (geo.getDecorator() != null)) {
+				if (shipment.isfirstShipmentOfTrip()) {
+					((TextDecorator) geo.getDecorator()).setBackground(getColorOfString(locatorRGBfirstPositionBackground));
+					((TextDecorator) geo.getDecorator()).setForeground(getColorOfString(locatorRGBfirstPositionForeground));
+				} else {
+					((TextDecorator) geo.getDecorator()).setBackground(getColorOfString(locatorRGBAllPositionBackground));
+					((TextDecorator) geo.getDecorator()).setForeground(getColorOfString(locatorRGBAllPositionForeground));
 				}
 			}
 		}
@@ -1144,8 +1126,6 @@ public class MapControl implements IMapControl {
 				if (this.showtripkey != null) {
 					if (this.showtripkey.equals(((Shipment) object).getTripKey())) {
 						return true;
-					} else {
-						return false;
 					}
 				} else if (this.showtruckKey != null && this.showtruckKey.equals(((Shipment) object).getTruck().getVehicleKey())) {
 					return true;
@@ -1385,10 +1365,9 @@ public class MapControl implements IMapControl {
 						}
 					}
 				}
-				if (this.filterDispatchedDeliveries && this.orderReceiverFilter != null) {
-					if (od.getOrderReceiver() != null && !od.getOrderReceiver().getKeyText().equalsIgnoreCase(this.orderReceiverFilter)) {
-						return false;
-					}
+				if ((this.filterDispatchedDeliveries && this.orderReceiverFilter != null)
+						&& (od.getOrderReceiver() != null && !od.getOrderReceiver().getKeyText().equalsIgnoreCase(this.orderReceiverFilter))) {
+					return false;
 				}
 			}
 		}
@@ -1433,7 +1412,7 @@ public class MapControl implements IMapControl {
 	public void showInfos(final int pixelx, final int pixely) {
 		if (trucksSelected) {
 			List<ITruckPosition> positions = getTrucksFromPixel(pixelx, pixely);
-			if (positions.size() > 0) {
+			if (!positions.isEmpty()) {
 				String tooltipText = "";
 				boolean first = true;
 				for (ITruckPosition pos : positions) {
@@ -1443,8 +1422,6 @@ public class MapControl implements IMapControl {
 						first = false;
 					}
 					tooltipText += pos.getTruckText();
-					// tooltipText += " - " +
-					// DateTimeFormatter.formatDateTimeString(pos.getPositionDate());
 					LocalDateTime positionDate = pos.getPositionDate();
 					String positionDateStr = ValueFormatter.toString(ValueFormatType.DATE_TIME, positionDate, null);
 					tooltipText += " - " + positionDateStr;
@@ -1493,7 +1470,7 @@ public class MapControl implements IMapControl {
 				@Override
 				public void widgetSelected(SelectionEvent e) {
 					if (listener != null && e.item.getData() instanceof Integer) {
-						listener.shipmentSelected(((Integer) e.item.getData()).intValue());
+						listener.shipmentSelected(((Integer) e.item.getData()));
 					}
 					if (e.item.getData(ShipmentInfos.TOOLTIP_TEXT.name()) != null) {
 						infoToolTip.setText((String) e.item.getData(ShipmentInfos.TOOLTIP_TEXT.name()));
@@ -1507,7 +1484,7 @@ public class MapControl implements IMapControl {
 					if (infoTable != null && infoTable.getSelectionCount() > 0) {
 						TableItem item = infoTable.getSelection()[0];
 						if (listener != null && item.getData() instanceof Integer) {
-							listener.shipmentDoubleClicked(((Integer) item.getData()).intValue());
+							listener.shipmentDoubleClicked(((Integer) item.getData()));
 						}
 						if (item.getData(ShipmentInfos.TOOLTIP_TEXT.name()) != null) {
 							infoToolTip.setText((String) item.getData(ShipmentInfos.TOOLTIP_TEXT.name()));
@@ -1516,9 +1493,10 @@ public class MapControl implements IMapControl {
 					}
 				}
 
-				// #53302: brauchen wir nicht, das macht der SelectionListener
 				@Override
-				public void mouseDown(MouseEvent e) {}
+				public void mouseDown(MouseEvent e) {
+					// #53302: brauchen wir nicht, das macht der SelectionListener
+				}
 			});
 			infoTable.addKeyListener(new KeyAdapter() {
 				@Override
@@ -1526,7 +1504,7 @@ public class MapControl implements IMapControl {
 					if (e.keyCode == SWT.CR || e.keyCode == SWT.KEYPAD_CR) {
 						TableItem item = infoTable.getSelection()[0];
 						if (listener != null && item.getData() instanceof Integer) {
-							listener.shipmentDoubleClicked(((Integer) item.getData()).intValue());
+							listener.shipmentDoubleClicked(((Integer) item.getData()));
 						}
 						if (item.getData(ShipmentInfos.TOOLTIP_TEXT.name()) != null) {
 							infoToolTip.setText((String) item.getData(ShipmentInfos.TOOLTIP_TEXT.name()));
@@ -1540,7 +1518,7 @@ public class MapControl implements IMapControl {
 		}
 		List<IInfoProvider> infoProviders = getShipmentsFromPixel(pixelx, pixely);
 
-		if (infoProviders.size() > 0) {
+		if (!infoProviders.isEmpty()) {
 			infoTable.removeAll();
 
 			int totalQuantity = 0;
@@ -1564,7 +1542,7 @@ public class MapControl implements IMapControl {
 						if (intValue != null) {
 							item.setText(i, NumberFormat.getIntegerInstance().format(intValue));
 							if (infos == ShipmentInfos.QUANTITY) {
-								totalQuantity += intValue.intValue();
+								totalQuantity += intValue;
 							}
 						} else {
 							item.setText(i, "");
@@ -1866,7 +1844,7 @@ public class MapControl implements IMapControl {
 				// 2. die Qualität nicht egal und und:
 				// 2.1 es ein eindeutiger Hit ist, aber die Qualität zu schlecht
 				// 2.2 es mehrere Treffer gibt
-				if (geo.size() == 0 || (!geocodeIgnoreQuality && ((geo.size() == 1 && !checkQualtiy(geo.get(0).getQuality())) || geo.size() > 1))) {
+				if (geo.isEmpty() || (!geocodeIgnoreQuality && ((geo.size() == 1 && !checkQualtiy(geo.get(0).getQuality())) || geo.size() > 1))) {
 					// Keiner oder mutliple Treffer
 					// Form anzeigen
 					inSearchMode = true;
@@ -1954,7 +1932,6 @@ public class MapControl implements IMapControl {
 		} else {
 			return false;
 		}
-
 	}
 
 	@Override
@@ -2041,8 +2018,7 @@ public class MapControl implements IMapControl {
 		int retx = p.x - x;
 		int rety = p.y - y;
 		double diagDouble = Math.sqrt((retx * retx) + (rety * rety));
-		int diagInt = (int) Math.round(diagDouble);
-		return diagInt;
+		return (int) Math.round(diagDouble);
 	}
 
 	@Override
