@@ -943,8 +943,8 @@ public class MapControl implements IMapControl {
 	/**
 	 * Wird immer im UI-Thread aufgerufen!
 	 */
-	protected void redrawMap(final boolean changed, final String trip) {
-		tripKeyStr = trip;
+	protected void redrawMap(final boolean changed, final String tripKeyStr) {
+		this.tripKeyStr = tripKeyStr;
 
 		// ab hier kann man wahrscheinlich die redrawMap(changed) von oben verwenden
 		redrawMap(changed, true);
@@ -959,7 +959,7 @@ public class MapControl implements IMapControl {
 	@Override
 	public void redrawMap(final boolean changed, final boolean async) {
 		synchronized (changedmap) {
-			// Sobald wir es auf true setzen bleibt es ach so
+			// Sobald wir es auf true setzen bleibt es auch so
 			changedmap |= changed;
 		}
 		Runnable runnable = () -> {
@@ -1323,8 +1323,8 @@ public class MapControl implements IMapControl {
 	}
 
 	@Override
-	public void redraw(String Trip) {
-		redrawMap(true, Trip);
+	public void redraw(String tripKeyStr) {
+		redrawMap(true, tripKeyStr);
 	}
 
 	/**
@@ -2143,9 +2143,8 @@ public class MapControl implements IMapControl {
 	}
 
 	@Override
-	public void setTripKeyStr(String keyLong) {
-		this.tripKeyStr = keyLong;
-
+	public void setTripKeyStr(String tripKeyStr) {
+		this.tripKeyStr = tripKeyStr;
 	}
 
 	@Override
