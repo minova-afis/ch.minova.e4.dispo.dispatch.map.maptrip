@@ -944,7 +944,11 @@ public class MapControl implements IMapControl {
 	 * Wird immer im UI-Thread aufgerufen!
 	 */
 	protected void redrawMap(final boolean changed, final String tripKeyStr) {
-		this.tripKeyStr = tripKeyStr;
+		if (this.drawTrip) {
+			this.tripKeyStr = tripKeyStr;
+		} else {
+			resetTripKey();
+		}
 
 		// ab hier kann man wahrscheinlich die redrawMap(changed) von oben verwenden
 		redrawMap(changed, true);
