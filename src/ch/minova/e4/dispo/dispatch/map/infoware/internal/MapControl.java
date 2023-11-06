@@ -1627,8 +1627,7 @@ public class MapControl implements IMapControl {
 
 			infoShell.open();
 
-			// Wir wollen die Info-Shell auch schließen, wenn das Fenster
-			// den Fokus verliert
+			// Wir wollen die Info-Shell auch schließen, wenn das Fenster den Fokus verliert
 			infoShell.addShellListener(new ShellAdapter() {
 				@Override
 				public void shellDeactivated(ShellEvent e) {
@@ -1637,8 +1636,7 @@ public class MapControl implements IMapControl {
 
 				@Override
 				public void shellClosed(ShellEvent e) {
-					infoShell.setVisible(false);
-					// infoToolTip.hide();
+					hideShipmentInfos();
 					e.doit = false;
 				}
 			});
