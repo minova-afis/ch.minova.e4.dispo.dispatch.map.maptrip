@@ -435,7 +435,11 @@ public class MapControl implements IMapControl {
 		private boolean painting = false;
 
 		// Initial mal mit leeren Listen und Maps füllen
-		public MapImages images = new MapImages(new LinkedList<IGeocoded>(), new HashMap<Point, MapControl.DistortionLine>(), new HashMap<IGeocoded, Point>());
+		private MapImages images = new MapImages(new LinkedList<>(), new HashMap<>(), new HashMap<>());
+
+		void setImages(MapImages images) {
+			this.images = images;
+		}
 
 		@Override
 		public void paintControl(PaintEvent e) {
@@ -636,8 +640,6 @@ public class MapControl implements IMapControl {
 
 	private boolean inSearchMode = false;
 	private boolean inGeoCodeMode = false;
-
-	private Shell shell;
 
 	private ImageRegistry registry = new ImageRegistry();
 
@@ -891,7 +893,8 @@ public class MapControl implements IMapControl {
 			List<IGeocoded> images = new CopyOnWriteArrayList<>(mapImages);
 
 			paintListener.breakOut = true;
-			paintListener.images = preprocessImages(images);
+			MapImages mapImages = preprocessImages(images);
+			paintListener.setImages(mapImages);
 		}
 	}
 
@@ -1019,23 +1022,24 @@ public class MapControl implements IMapControl {
 			if (geo instanceof GeocodedImageProvider) {
 				handleGeocodedImageProvider((GeocodedImageProvider) geo);
 				GeocodedImageProvider prov = (GeocodedImageProvider) geo;
-				if ((Boolean) prov.getInfos().get(ShipmentInfos.ALLOCATED.name()) && showAllocatedforObject) {
-					if (checkShowGeo(prov)) {
-						continue;
+				if (Boolean.TRUE.equals(prov.getInfos().get(ShipmentInfos.ALLOCATED.name()))) {
+					// Das Shipment ist allocated
+					if (showAllocatedforObject) {
+						if (checkShowGeo(prov)) {
+							continue;
+						} else {
+							if (p != null) {
+								imagePoints.remove(geo);
+							}
+							continue;
+						}
 					} else {
+						// ... und wir wollen es nicht anzeigen, also schmeißen wirs raus
 						if (p != null) {
 							imagePoints.remove(geo);
 						}
 						continue;
 					}
-				}
-				if ((Boolean) prov.getInfos().get(ShipmentInfos.ALLOCATED.name()) && !showAllocatedShipments) {
-					// Das Shipment ist allocated und wir wollen es nicht
-					// anzeigen, also schmeißen wirs raus
-					if (p != null) {
-						imagePoints.remove(geo);
-					}
-					continue;
 				}
 				if (distortion) {
 					Object object = ((GeocodedImageProvider) geo).getInfos().get("SOURCE");
@@ -1611,7 +1615,7 @@ public class MapControl implements IMapControl {
 			final Shell tmpShell = infoShell;
 			infoShell = null;
 			if (tmpShell != null) {
-				tmpShell.getDisplay().asyncExec(() -> tmpShell.dispose());
+				tmpShell.getDisplay().asyncExec(tmpShell::dispose);
 			}
 		}
 	}
