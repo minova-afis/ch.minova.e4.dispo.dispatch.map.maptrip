@@ -411,6 +411,14 @@ public class MapControl implements IMapControl {
 			this.distortionLines = distortionLines;
 			this.imagePoints = imagePoints;
 		}
+
+		public void clear() {
+			try {
+				images.clear();
+				imagePoints.clear();
+				distortionLines.clear();
+			} catch (Exception ex) {}
+		}
 	}
 
 	private class ImageOnMap {
@@ -565,6 +573,10 @@ public class MapControl implements IMapControl {
 					for (ImageOnMap imageOnMap : mapImages) {
 						e.gc.drawImage(imageOnMap.image, imageOnMap.x, imageOnMap.y);
 					}
+
+					// aufräumen
+					mapImages.clear();
+
 					// Einmal durchgelaufen setzen wir das Flag wieder um
 					breakOut = false;
 				}
@@ -1140,6 +1152,13 @@ public class MapControl implements IMapControl {
 			controller.dispose();
 			controller = null;
 		}
+		if (map != null && !map.isDisposed()) {
+			map.dispose();
+		}
+
+		clearImages();
+
+		paintListener.images.clear();
 
 		// jetzt sind wir fertig - inject ganz oben, um die Helper zu informieren
 		// das wird jetzt an eine andere Stelle gesetzt als es ursprünglich lag, es ist aber dasselbe Objekt
