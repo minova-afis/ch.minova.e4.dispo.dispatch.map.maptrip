@@ -254,7 +254,6 @@ public class MapControl implements IMapControl {
 			layout.marginHeight = 3;
 			layout.marginWidth = 3;
 			parent.setLayout(layout);
-			// label.setFont(new Font(label.getDisplay(), fontData));
 			if (text != null) {
 				label.setText(text);
 			}
@@ -445,31 +444,21 @@ public class MapControl implements IMapControl {
 			}
 			painting = true;
 
-//			Image newImage = new Image(h.gc.getDevice(), map.getBounds());
-//			GC igc = new GC(newImage);
-//			igc.setBackground(h.gc.getBackground());
-//			igc.setForeground(h.gc.getForeground());
-//			igc.drawImage(mVC.getImage(), 0, 0);
-
 			try {
 				TruckPosition.reset();
 				if (rectangle != null) {
 					map.setBackgroundImage(backgroundImage);
 					e.gc.setForeground(colorBlack);
-//					igc.setForeground(colorBlack);
 					if (useRectangle) {
 						e.gc.drawRectangle(rectangle);
-//						igc.drawRectangle(rectangle);
 					} else {
 						e.gc.drawFocus(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-//						igc.drawFocus(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 					}
 					return;
 				}
 				if (!images.distortionLines.isEmpty()) {
 					for (DistortionLine line : images.distortionLines.values()) {
 						line.draw(e.gc);
-//						line.draw(igc);
 					}
 				}
 				if (!images.images.isEmpty()) {
@@ -490,8 +479,7 @@ public class MapControl implements IMapControl {
 									continue;
 								}
 								if ((imageFilter == null || imageFilter.show(geocodedImage)) && (geocodedImage.getSelection().isSelected() || allocated)) {
-									// Nach dem Refactoring sollten alle
-									// imagePoints schon bereits gerechnet sein!
+									// Nach dem Refactoring sollten alle imagePoints schon bereits gerechnet sein!
 									Point point = images.imagePoints.get(geo);
 									if (point == null) {
 										continue;
@@ -513,12 +501,10 @@ public class MapControl implements IMapControl {
 									}
 									if (geocodedImage.getDecorator() != null) {
 										geocodedImage.getDecorator().draw(e.gc, point.x, point.y);
-//											geocodedImage.getDecorator().draw(igc, point.x, point.y);
 									}
 									Image image = geocodedImage.getImage();
 									Rectangle rec = image.getBounds();
 									mapImages.add(new ImageOnMap(image, (point.x - (rec.width / 2)), (point.y - (rec.height / 2))));
-//										e.gc.drawImage(image, (point.x - (rec.width / 2)), (point.y - (rec.height / 2)));
 								}
 							} else if (geo instanceof GeocodedImageLocator) {
 								GeocodedImageLocator loc = (GeocodedImageLocator) geo;
@@ -527,7 +513,6 @@ public class MapControl implements IMapControl {
 								Point locator = controller.getPixelfromMercator(geo.getMercatorX(), geo.getMercatorY());
 								images.imagePoints.put(geo, locator);
 								mapImages.add(new ImageOnMap(image, locator.x - (bounds.width / 2), locator.y - (bounds.height / 2)));
-//								e.gc.drawImage(image, locator.x - (bounds.width / 2), locator.y - (bounds.height / 2));
 							} else if (geo instanceof ITruckPosition) {
 								if (trucksSelected) {
 									ITruckPosition truck = (ITruckPosition) geo;
@@ -542,10 +527,8 @@ public class MapControl implements IMapControl {
 									int centerx = locator.x - (bounds.width / 2);
 									int centery = locator.y - (bounds.height / 2);
 									truck.getDecorator().draw(e.gc, locator.x, locator.y);
-//									truck.getDecorator().draw(igc, locator.x, locator.y);
 									// Zum Schluss das Bild
 									mapImages.add(new ImageOnMap(image, centerx, centery));
-//									e.gc.drawImage(image, centerx, centery);
 								}
 							} else if (geo instanceof IDepotPosition) {
 								if (tdepotsSelected) {
@@ -557,41 +540,29 @@ public class MapControl implements IMapControl {
 									images.imagePoints.put(depot, locator);
 									Image image = registry.get(DEPOT_IMAGE);
 									Rectangle bounds = image.getBounds();
-									// Image erst später Zeichnen, erstmal die Linien
-									// und Texte!
+									// Image erst später zeichnen, erstmal die Linien und Texte!
 									int centerx = locator.x - (bounds.width / 2);
 									int centery = locator.y - (bounds.height / 2);
 									depot.getDecorator().draw(e.gc, locator.x, locator.y);
-//									depot.getDecorator().draw(igc, locator.x, locator.y);
 									// Zum Schluss das Bild
 									mapImages.add(new ImageOnMap(image, centerx, centery));
-//									e.gc.drawImage(image, centerx, centery);
 								}
 							} else if (geo instanceof GeocodedLocator) {
 								Color locColor = new Color(e.display, locatorRGB);
-//								igc.setForeground(locColor);
 								e.gc.setForeground(locColor);
 								Point locator = controller.getPixelfromMercator(geo.getMercatorX(), geo.getMercatorY());
 								images.imagePoints.put(geo, locator);
 								e.gc.drawOval(locator.x - (locatorSize / 2), locator.y - (locatorSize / 2), locatorSize, locatorSize);
-//								igc.drawOval(locator.x - (locatorSize / 2), locator.y - (locatorSize / 2), locatorSize, locatorSize);
 								locColor.dispose();
 							}
-						} else if (geo instanceof GeocodedImageProvider) {
-							// nein, das könnten wir auch noch mal malen
-							// ((GeocodedImageProvider) geo).dispose();
 						}
 					}
 					// Wir malen alles auf einmal
 					for (ImageOnMap imageOnMap : mapImages) {
-//						igc.drawImage(imageOnMap.image, imageOnMap.x, imageOnMap.y);
 						e.gc.drawImage(imageOnMap.image, imageOnMap.x, imageOnMap.y);
 					}
 					// Einmal durchgelaufen setzen wir das Flag wieder um
 					breakOut = false;
-//					h.gc.copyArea(newImage, 0, 0);
-//					e.gc.dispose();
-//					igc.dispose();
 				}
 
 				if (rectangle == null) {
@@ -612,10 +583,7 @@ public class MapControl implements IMapControl {
 				map.setBounds(map.getBounds().x, map.getBounds().y, 1, 1);
 			}
 			backgroundImage = new Image(gc.getDevice(), map.getBounds());
-			// Dieses Problem hat nur Neon und MAC
-			// map.removePaintListener(paintListener);
 			gc.copyArea(backgroundImage, 0, 0);
-			// map.addPaintListener(paintListener);
 		}
 	}
 
@@ -812,14 +780,9 @@ public class MapControl implements IMapControl {
 		controller = new MapViewPointController(this);
 		context.getParent().set(MapViewPointController.class, controller);
 		adapter = new MapControlMouseAdapter(this, controller);
-//		if (extractable && initialExtracted) {
-//			parent.getDisplay().asyncExec(this::extractMap);
-		// #51952: macht jetzt evtl. der OpenMapWindowHandler
-//		}
 
 		// jetzt sind wir fertig - inject ganz oben, um die Helper zu informieren
-		// das wird jetzt an eine andere Stelle gesetzt als es ursprünglich lag, es ist
-		// aber dasselbe Objekt
+		// das wird jetzt an eine andere Stelle gesetzt als es ursprünglich lag, es ist aber dasselbe Objekt
 		this.context.getParent().getParent().set(IMapControl.class, null);
 		this.context.getParent().getParent().set(IMapControl.class, this);
 	}
@@ -971,7 +934,7 @@ public class MapControl implements IMapControl {
 				redrawMapImages(changedmap);
 				map.getShell().setCursor(map.getDisplay().getSystemCursor(SWT.CURSOR_WAIT));
 				if (changedmap) {
-					// Wenn es eine Konkrete Shapedatei gibt, dann wird diese angezeigt.
+					// Wenn es eine konkrete Shapedatei gibt, dann wird diese angezeigt.
 					if (tripKeyStr != null && !tripKeyStr.isEmpty()) {
 						controller.drawMapTrip(changedmap, tripKeyStr);
 					} else if (tripKey != 0) {
@@ -1044,8 +1007,8 @@ public class MapControl implements IMapControl {
 					continue;
 				}
 			}
-			// An dieser Stelle werden die Positionen der Depot ein und ausgeblendet.
-			// An dieser Stelle werden die Positionen der Trucks ein und ausgeblendet.
+			// An dieser Stelle werden die Positionen der Depots ein- und ausgeblendet.
+			// An dieser Stelle werden die Positionen der Trucks ein- und ausgeblendet.
 			if (((geo instanceof DepotPosition) && !tdepotsSelected) || ((geo instanceof TruckPosition) && !trucksSelected)) {
 				if (p != null) {
 					imagePoints.remove(geo);
@@ -1103,7 +1066,7 @@ public class MapControl implements IMapControl {
 		Object object = geo.getInfos().get("");
 		if (object instanceof Shipment) {
 			Shipment shipment = (Shipment) object;
-			// #32593 markiert die 1. Lieferposition in den Komplimentärfarben.
+			// #32593 markiert die 1. Lieferposition in den Komplementärfarben.
 			if ((shipment.getTrip() != null) && (geo.getDecorator() != null)) {
 				if (shipment.isfirstShipmentOfTrip()) {
 					((TextDecorator) geo.getDecorator()).setBackground(getColorOfString(locatorRGBfirstPositionBackground));
@@ -1117,7 +1080,7 @@ public class MapControl implements IMapControl {
 	}
 
 	/**
-	 * Diese Methode überprüft, ob das Bild auf die Karte gemalt wird order nicht
+	 * Diese Methode überprüft, ob das Bild auf die Karte gemalt wird oder nicht
 	 * 
 	 * @param geo
 	 * @return
@@ -1165,19 +1128,17 @@ public class MapControl implements IMapControl {
 		if (adapter != null) {
 			adapter.dispose();
 		}
-		// // Dann den Rest
+		// Dann den Rest
 		if (parent != null && !parent.isDisposed()) {
 			parent.dispose();
 		}
-
 		if (controller != null) {
 			controller.dispose();
 			controller = null;
 		}
 
 		// jetzt sind wir fertig - inject ganz oben, um die Helper zu informieren
-		// das wird jetzt an eine andere Stelle gesetzt als es ursprünglich lag, es ist
-		// aber dasselbe Objekt
+		// das wird jetzt an eine andere Stelle gesetzt als es ursprünglich lag, es ist aber dasselbe Objekt
 		this.context.getParent().getParent().set(IMapControl.class, null);
 		this.context.getParent().getParent().set(IMapControl.class, this);
 	}
@@ -1444,13 +1405,10 @@ public class MapControl implements IMapControl {
 		if (infoShell == null) {
 			infoShell = new Shell(map.getShell(), SWT.NO_TRIM | SWT.ON_TOP);
 			infoShell.setLayout(new FillLayout());
-			// Font font = new Font(map.getDisplay(), fontData);
-			// infoShell.setFont(font);
 			infoShell.addDisposeListener(new DisposeListener() {
 				@Override
 				public void widgetDisposed(DisposeEvent e) {
-					// Die Infoshell wird disposed, wenn die Karte wieder
-					// integriert wird.
+					// Die Infoshell wird disposed, wenn die Karte wieder integriert wird.
 					if (infoShell != null) {
 						infoShell.removeDisposeListener(this);
 					}
@@ -1459,7 +1417,6 @@ public class MapControl implements IMapControl {
 				}
 			});
 			infoTable = new Table(infoShell, SWT.V_SCROLL | SWT.FULL_SELECTION);
-			// infoTable.setFont(font);
 
 			for (ShipmentInfos info : ShipmentInfos.getShownInfos()) {
 				createColumn(infoTable, info);
@@ -1527,7 +1484,6 @@ public class MapControl implements IMapControl {
 
 			int totalQuantity = 0;
 			for (IInfoProvider prov : infoProviders) {
-
 				TableItem item = new TableItem(infoTable, SWT.NONE);
 				Boolean allocated = (Boolean) prov.getInfos().get(ShipmentInfos.ALLOCATED.name());
 				if (allocated) {
@@ -1598,9 +1554,8 @@ public class MapControl implements IMapControl {
 				monitorPoint.y = display.y - monitorBounds.y;
 			}
 
-			// Ergibt das selbe wie monitor.getBounds(), allerdings nur,
-			// wenn es keine Leisten (Windowsleiste, Telefonanlagen-Leiste
-			// SuK) gibt:
+			// Ergibt dasselbe wie monitor.getBounds(), allerdings nur,
+			// wenn es keine Leisten (Windowsleiste, Telefonanlagen-Leiste SuK) gibt:
 			Rectangle displaySize = monitor.getClientArea();
 
 			// Entscheiden, ob nach rechts oder links zu rendern.
@@ -1616,8 +1571,7 @@ public class MapControl implements IMapControl {
 			// Schauen, ob das auch noch auf den Monitor passt
 			int diffY = displaySize.height - monitorPoint.y;
 			if (shellSize.y > (diffY)) {
-				// Wenn nicht, verkleinern wir die Größe, damit ein
-				// Rollbalken entsteht.
+				// Wenn nicht, verkleinern wir die Größe, damit ein Rollbalken entsteht.
 				infoShell.setSize(shellSize.x, diffY);
 				infoShell.layout();
 				infoTable.layout();
@@ -1798,11 +1752,9 @@ public class MapControl implements IMapControl {
 		maxx = pixelx + hoverPixels;
 		miny = pixely - hoverPixels;
 		maxy = pixely + hoverPixels;
-		// Aus den aktuellen Bildern die Trucks raussuchen -> diese haben
-		// aktuelle Daten!
+		// Aus den aktuellen Bildern die Trucks raussuchen -> diese haben aktuelle Daten!
 		for (IGeocoded geo : mapImages) {
-			// Zugehörige Image-Points finden -> diese können veraltete Daten
-			// enthalten
+			// Zugehörige Image-Points finden -> diese können veraltete Daten enthalten
 			if (geo instanceof ITruckPosition && paintListener.images.imagePoints.containsKey(geo)) {
 				// Die Punkte müssen aktuell sein!
 				Point p = paintListener.images.imagePoints.get(geo);
@@ -1883,7 +1835,7 @@ public class MapControl implements IMapControl {
 						// Wir sind im UI-Thread
 						r.run();
 					} else {
-						// IM UI Thread ausführen
+						// Im UI-Thread ausführen
 						map.getDisplay().syncExec(r);
 					}
 				} else {
