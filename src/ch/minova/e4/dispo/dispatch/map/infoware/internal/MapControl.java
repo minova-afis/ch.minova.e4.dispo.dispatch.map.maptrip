@@ -1801,7 +1801,11 @@ public class MapControl implements IMapControl {
 			infoShell.setVisible(false);
 		}
 		if (truckToolTip != null) {
-			truckToolTip.hide();
+			try {
+				truckToolTip.hide();
+			} catch (SWTException ex) {
+				truckToolTip = null;
+			}
 		}
 	}
 
