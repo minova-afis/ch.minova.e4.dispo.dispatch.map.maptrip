@@ -1045,7 +1045,8 @@ public class MapControl implements IMapControl {
 							}
 							continue;
 						}
-					} else {
+					}
+					if (!showAllocatedShipments) {
 						// ... und wir wollen es nicht anzeigen, also schmeißen wirs raus
 						if (p != null) {
 							imagePoints.remove(geo);
