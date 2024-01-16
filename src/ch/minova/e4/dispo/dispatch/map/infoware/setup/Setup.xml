@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<setup name="ch.minova.e4.dispo.dispatch.map.infoware" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="../../../../../../../../../../../../ch.minova.install/xsd/SetupProperties.xsd">
+	<required-modules>
+		<module name="ch.minova.ncore" major="10" minor="36"/>
+		<module name="ch.minova.dispo.dispatch.map.core" major="11" minor="2" patch="3"/>
+		<module name="ch.minova.e4.dispo.dispatch" major="11" minor="7"/>
+		<module name="ch.minova.dispo.dispatch.model" major="11" minor="9"/>
+		<module name="ch.minova.core.model" major="11" minor="1"/>
+		<module name="ch.minova.e4.dispo.dispatch.map.ui" major="11" minor="8"/>
+	</required-modules>
+	<copy-file>
+		<filecopy filename="this" todir="${application}/plugins"/>
+	</copy-file>
+</setup>
