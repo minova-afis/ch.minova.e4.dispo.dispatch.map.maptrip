@@ -1185,11 +1185,8 @@ public class MapControl implements IMapControl {
 	}
 
 	protected boolean centerOnMercator(int mercatorX, int mercatorY) {
-		if (controller == null) {
-			// dann können wir nichts tun
-			return false;
-		}
-		if (controller.getMapCenterX() == mercatorX && controller.getMapCenterY() == mercatorY && controller.getMapDistanceX() == mapZoomLatitude) {
+		if ((controller == null) // dann können wir nichts tun
+				|| (controller.getMapCenterX() == mercatorX && controller.getMapCenterY() == mercatorY && controller.getMapDistanceX() == mapZoomLatitude)) {
 			// ist bereits optimal
 			return false;
 		}
@@ -1343,15 +1340,14 @@ public class MapControl implements IMapControl {
 
 			// #53321: ggf. weitere Filter
 			if (shipment.getTrip() != null) {
-				if (this.filterDispatchedDeliveries && this.itemGroupFilter != null) {
-					if (od.getItem() != null && od.getItem().getItemGroups() != null && !od.getItem().getItemGroups().isEmpty()) {
-						boolean matches = false;
-						for (String s : od.getItem().getItemGroups()) {
-							matches |= this.itemGroupFilter.equalsIgnoreCase(s);
-						}
-						if (!matches) {
-							return false;
-						}
+				if (this.filterDispatchedDeliveries && this.itemGroupFilter != null
+						&& (od.getItem() != null && od.getItem().getItemGroups() != null && !od.getItem().getItemGroups().isEmpty())) {
+					boolean matches = false;
+					for (String s : od.getItem().getItemGroups()) {
+						matches |= this.itemGroupFilter.equalsIgnoreCase(s);
+					}
+					if (!matches) {
+						return false;
 					}
 				}
 				if ((this.filterDispatchedDeliveries && this.orderReceiverFilter != null)
@@ -1371,6 +1367,7 @@ public class MapControl implements IMapControl {
 		maxx = pixelx + hoverPixels;
 		miny = pixely - hoverPixels;
 		maxy = pixely + hoverPixels;
+
 		for (IGeocoded geo : paintListener.images.imagePoints.keySet().toArray(new IGeocoded[0])) {
 			if (geo instanceof IInfoProvider) {
 				Point p = paintListener.images.imagePoints.get(geo);
@@ -1928,13 +1925,9 @@ public class MapControl implements IMapControl {
 		for (IGeocoded geo : paintListener.images.imagePoints.keySet()) {
 			if (geo instanceof IInfoProvider) {
 				boolean allocated = (Boolean) ((IInfoProvider) geo).getInfos().get(ShipmentInfos.ALLOCATED.name());
-				if (allocated) {
-					// Der ist schon disponiert und kann nicht nochmal
-					// disponiert werden
-					continue;
-				}
-				if (geo instanceof GeocodedImageProvider && !((GeocodedImageProvider) geo).getSelection().isSelected()) {
-					// Der ist eigentlich nicht sichtbar...
+				if (allocated // ist schon disponiert und kann nicht nochmal disponiert werden
+						|| (geo instanceof GeocodedImageProvider && !((GeocodedImageProvider) geo).getSelection().isSelected())) {
+					// ist eigentlich nicht sichtbar...
 					continue;
 				}
 
@@ -1968,13 +1961,9 @@ public class MapControl implements IMapControl {
 			}
 			if (geo instanceof IInfoProvider) {
 				boolean allocated = (Boolean) ((IInfoProvider) geo).getInfos().get(ShipmentInfos.ALLOCATED.name());
-				if (allocated) {
-					// Der ist schon disponiert und kann nicht nochmal
-					// disponiert werden
-					continue;
-				}
-				if (geo instanceof GeocodedImageProvider && !((GeocodedImageProvider) geo).getSelection().isSelected()) {
-					// Der ist eigentlich nicht sichtbar...
+				if (allocated // ist schon disponiert und kann nicht nochmal disponiert werden
+						|| (geo instanceof GeocodedImageProvider && !((GeocodedImageProvider) geo).getSelection().isSelected())) {
+					// ist eigentlich nicht sichtbar...
 					continue;
 				}
 				Point p = paintListener.images.imagePoints.get(geo);
