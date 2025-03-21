@@ -737,7 +737,7 @@ public class MapControl implements IMapControl {
 	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_FILTER_DISPATCHED_DELIVERIES)
 	private boolean filterDispatchedDeliveries;
 
-	// aktueller Zoom
+	// Positionsgeber: Breite Kartenausschnitt
 	@Inject
 	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_ZOOM_LATITUDE)
 	private int mapZoomLatitude = 5000;
