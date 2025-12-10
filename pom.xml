@@ -1,5 +1,4 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>ch.minova.e4.dispo.dispatch.map.infoware</artifactId>
@@ -10,13 +9,70 @@
 		<groupId>ch.minova.bundle</groupId>
 		<artifactId>ch.minova.parent</artifactId>
 		<version>10.3.0</version>
-		
+		<relativePath/>
 	</parent>
 
 	<scm>
-      <developerConnection>scm:git:ssh://git@github.com/minova-afis/ch.minova.e4.dispo.dispatch.map.infoware.git</developerConnection>
-      <connection>scm:git:ssh://git@github.com/minova-afis/ch.minova.e4.dispo.dispatch.map.infoware.git</connection>
-      <url>ssh://git@github.com/minova-afis/ch.minova.e4.dispo.dispatch.map.infoware</url>
-      <tag>HEAD</tag>
-   </scm>
+		<developerConnection>scm:git:ssh://git@github.com/minova-afis/ch.minova.e4.dispo.dispatch.map.infoware.git</developerConnection>
+		<connection>scm:git:ssh://git@github.com/minova-afis/ch.minova.e4.dispo.dispatch.map.infoware.git</connection>
+		<url>ssh://git@github.com/minova-afis/ch.minova.e4.dispo.dispatch.map.infoware</url>
+		<tag>HEAD</tag>
+	</scm>
+	<dependencies>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>ch.minova.e4.dispo.dispatch.map.ui</artifactId>
+			<version>11.8.2</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>ch.minova.dispo.dispatch.map.core</artifactId>
+			<version>11.2.3</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>ch.minova.core.model</artifactId>
+			<version>11.14.0</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>ch.minova.ncore</artifactId>
+			<version>10.61.0</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>ch.minova.e4.core.eventdispatching</artifactId>
+			<version>11.2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>ch.minova.e4.dispo.dispatch</artifactId>
+			<version>11.11.3</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>org.fipro.e4.service.preferences</artifactId>
+			<version>11.2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>ch.minova.e4.print</artifactId>
+			<version>11.4.2</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>ch.minova.e4.libs.fop1_1</artifactId>
+			<version>10.2.13</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>ch.minova.e4.splash.service</artifactId>
+			<version>10.3.1</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.minova.bundle</groupId>
+			<artifactId>ch.minova.e4.translate.service</artifactId>
+			<version>11.3.1</version>
+		</dependency>
+	</dependencies>
 </project>
