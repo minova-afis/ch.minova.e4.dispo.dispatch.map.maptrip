@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,9 +23,9 @@ import org.eclipse.e4.core.di.annotations.Optional;
 import org.eclipse.e4.core.di.extensions.Preference;
 import org.eclipse.e4.core.services.translation.TranslationService;
 import org.eclipse.e4.ui.di.UISynchronize;
-import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.dnd.DropTargetListener;
@@ -150,13 +151,13 @@ public class MapControl implements IMapControl {
 		if (showProductDescription) {
 			// Produktbeschreibung spezifisch für diese Lieferung
 			String prodDesc = shipment.getItemDescription();
-			if (prodDesc != null && prodDesc.trim().length() > 0) {
+			if (prodDesc != null && !prodDesc.trim().isEmpty()) {
 				return prodDesc;
 			}
 
 			// Produktbeschreibung
 			prodDesc = shipment.getItem().getDescription();
-			if (prodDesc != null && prodDesc.trim().length() > 0) {
+			if (prodDesc != null && !prodDesc.trim().isEmpty()) {
 				return prodDesc;
 			}
 		}
@@ -234,7 +235,6 @@ public class MapControl implements IMapControl {
 	 */
 	private class InfoToolTip extends org.eclipse.jface.window.ToolTip {
 		private String text;
-		private Label label;
 
 		/**
 		 * Erzeugt einen Tooltip zu einem {@link Control}
@@ -248,7 +248,7 @@ public class MapControl implements IMapControl {
 
 		@Override
 		protected Composite createToolTipContentArea(Event event, Composite parent) {
-			label = new Label(parent, SWT.WRAP);
+			Label label = new Label(parent, SWT.WRAP);
 			FillLayout layout = new FillLayout();
 			layout.spacing = 3;
 			layout.marginHeight = 3;
@@ -824,8 +824,6 @@ public class MapControl implements IMapControl {
 	@Inject
 	public void showActiveTruck(@Optional @Named(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRUCK) Vehicle vehicle) {
 		if (vehicle != null) {
-			// showtripkey = null;
-			// showtruckPoolKey = null;
 			showtruckKey = vehicle.getKey();
 		} else {
 			showtripkey = null;
@@ -839,8 +837,6 @@ public class MapControl implements IMapControl {
 	public void showActiveTruckPool(@Optional @Named(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRUCKPOOL) Vehicle vehicle) {
 		if (vehicle != null) {
 			if (vehicle.isTruckPool()) {
-				// showtruckKey = null;
-				// showtripkey = null;
 				showtruckPoolKey = vehicle.getKey();
 			}
 		} else {
@@ -858,8 +854,6 @@ public class MapControl implements IMapControl {
 	@Inject
 	private void showActiveTrip(@Optional @Named(DispoDispatchEventTopics.DISPATCH_CONTEXT_ACTIVE_TRIP) Trip trip) {
 		if (trip != null) {
-			// showtruckPoolKey = null;
-			// showtruckKey = null;
 			showtripkey = trip.getKey();
 		} else {
 			showtripkey = null;
@@ -1361,12 +1355,11 @@ public class MapControl implements IMapControl {
 
 	private List<IInfoProvider> getShipmentsFromPixel(int pixelx, int pixely) {
 		List<IInfoProvider> shipments = new LinkedList<>();
-		int minx, maxx, miny, maxy;
 		int hoverPixels = Activator.getHoverPixels();
-		minx = pixelx - hoverPixels;
-		maxx = pixelx + hoverPixels;
-		miny = pixely - hoverPixels;
-		maxy = pixely + hoverPixels;
+		int minx = pixelx - hoverPixels;
+		int maxx = pixelx + hoverPixels;
+		int miny = pixely - hoverPixels;
+		int maxy = pixely + hoverPixels;
 
 		for (IGeocoded geo : paintListener.images.imagePoints.keySet().toArray(new IGeocoded[0])) {
 			if (geo instanceof IInfoProvider) {
@@ -1399,18 +1392,18 @@ public class MapControl implements IMapControl {
 		if (trucksSelected) {
 			List<ITruckPosition> positions = getTrucksFromPixel(pixelx, pixely);
 			if (!positions.isEmpty()) {
-				String tooltipText = "";
+				StringBuilder tooltipText = new StringBuilder();
 				boolean first = true;
 				for (ITruckPosition pos : positions) {
 					if (!first) {
-						tooltipText += "\n";
+						tooltipText.append("\n");
 					} else {
 						first = false;
 					}
-					tooltipText += pos.getTruckText();
+					tooltipText.append(pos.getTruckText());
 					LocalDateTime positionDate = pos.getPositionDate();
 					String positionDateStr = ValueFormatter.toString(ValueFormatType.DATE_TIME, positionDate, null);
-					tooltipText += " - " + positionDateStr;
+					tooltipText.append(" - ").append(positionDateStr);
 				}
 				if (map.isDisposed()) {
 					map.redraw();
@@ -1419,10 +1412,11 @@ public class MapControl implements IMapControl {
 				if (truckToolTip == null) {
 					truckToolTip = new InfoToolTip(map);
 				}
-				truckToolTip.setText(tooltipText);
+				truckToolTip.setText(tooltipText.toString());
 				truckToolTip.show(new Point(pixelx + 10, pixely));
 			}
 		}
+
 		if (infoShell == null) {
 			infoShell = new Shell(map.getShell(), SWT.NO_TRIM | SWT.ON_TOP);
 			infoShell.setLayout(new FillLayout());
@@ -1498,8 +1492,8 @@ public class MapControl implements IMapControl {
 				}
 			});
 		}
-		List<IInfoProvider> infoProviders = getShipmentsFromPixel(pixelx, pixely);
 
+		List<IInfoProvider> infoProviders = getShipmentsFromPixel(pixelx, pixely);
 		if (!infoProviders.isEmpty()) {
 			infoTable.removeAll();
 
@@ -1767,12 +1761,11 @@ public class MapControl implements IMapControl {
 
 	private List<ITruckPosition> getTrucksFromPixel(int pixelx, int pixely) {
 		List<ITruckPosition> trucks = new LinkedList<>();
-		int minx, maxx, miny, maxy;
 		int hoverPixels = Activator.getHoverPixels();
-		minx = pixelx - hoverPixels;
-		maxx = pixelx + hoverPixels;
-		miny = pixely - hoverPixels;
-		maxy = pixely + hoverPixels;
+		int minx = pixelx - hoverPixels;
+		int maxx = pixelx + hoverPixels;
+		int miny = pixely - hoverPixels;
+		int maxy = pixely + hoverPixels;
 		// Aus den aktuellen Bildern die Trucks raussuchen -> diese haben aktuelle Daten!
 		for (IGeocoded geo : mapImages) {
 			// Zugehörige Image-Points finden -> diese können veraltete Daten enthalten
@@ -1869,21 +1862,22 @@ public class MapControl implements IMapControl {
 					if (geo.size() > 1) {
 						// Haben wir mehr als einen, suchen wir uns den mit der besten Qualität raus
 						for (IGeocodedAddress add : geo) {
-							if (foundGeo == null) {
-								foundGeo = add;
-							} else if (foundGeo.getHitProbability() < add.getHitProbability()) {
+							if (foundGeo == null || (foundGeo.getHitProbability() < add.getHitProbability())) {
 								foundGeo = add;
 							}
 						}
 					} else {
 						foundGeo = geo.get(0);
 					}
-					GeocodableAddressWithSource<E> add = new GeocodableAddressWithSource<>(a);
-					add.setMercatorX(foundGeo.getMercatorX());
-					add.setMercatorY(foundGeo.getMercatorY());
-					add.setCoordinateX(foundGeo.getCoordinateX());
-					add.setCoordinateY(foundGeo.getCoordinateY());
-					foundAddresses.add(add);
+
+					if (foundGeo != null) {
+						GeocodableAddressWithSource<E> add = new GeocodableAddressWithSource<>(a);
+						add.setMercatorX(foundGeo.getMercatorX());
+						add.setMercatorY(foundGeo.getMercatorY());
+						add.setCoordinateX(foundGeo.getCoordinateX());
+						add.setCoordinateY(foundGeo.getCoordinateY());
+						foundAddresses.add(add);
+					}
 				}
 			} catch (Exception e) {
 				Log.err(this, e);
@@ -1988,7 +1982,7 @@ public class MapControl implements IMapControl {
 		// wir berechnen die Länge der Diagonale
 		int retx = p.x - x;
 		int rety = p.y - y;
-		double diagDouble = Math.sqrt((retx * retx) + (rety * rety));
+		double diagDouble = Math.sqrt((retx * retx) + (double) (rety * rety));
 		return (int) Math.round(diagDouble);
 	}
 
@@ -2024,7 +2018,7 @@ public class MapControl implements IMapControl {
 			addressDialog.setResult(geo);
 			int retCode = addressDialog.open();
 			inSearchMode = false;
-			if (retCode == Dialog.OK) {
+			if (retCode == Window.OK) {
 				GeocodedAddressWithSource<IAddress> add = new GeocodedAddressWithSource<>(address);
 				IGeocodedAddress add2 = addressDialog.getSelected();
 				if (add2 != null) {
@@ -2175,7 +2169,7 @@ public class MapControl implements IMapControl {
 
 	@Override
 	public List<IGeocoded> getOptimizedTrip(List<IGeocoded> tripList, boolean fixedStart, boolean fixedEnd, String trip) {
-		return null;
+		return Collections.emptyList();
 	}
 
 	@Override
