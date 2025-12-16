@@ -1692,11 +1692,26 @@ public class MapControl implements IMapControl {
 		}
 
 		if (shipment.isShipment()) {
+			String eaTime = getValidTimeStringOrNull(shipment.getEarliestDeliveryTime());
+			String laTime = getValidTimeStringOrNull(shipment.getLatestDeliveryTime());
+
+			if (eaTime != null) {
+				builder.append(", ");
+				builder.append(eaTime);
+				builder.append(" - ");
+			}
+			if (laTime != null) {
+				if (eaTime == null) {
+					builder.append(", ");
+				}
+				builder.append(laTime);
+			}
+
 			String timeFrom = getValidTimeStringOrNull(shipment.getTimeFrom());
 			String timeUntil = getValidTimeStringOrNull(shipment.getTimeUntil());
 
 			if (timeFrom != null) {
-				builder.append(", ");
+				builder.append(", Disponent: ");
 				builder.append(timeFrom);
 				builder.append(" - ");
 			}
