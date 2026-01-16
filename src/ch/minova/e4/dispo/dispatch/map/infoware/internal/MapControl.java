@@ -81,7 +81,7 @@ import ch.minova.dispo.dispatch.map.core.IProjectionsController;
 import ch.minova.dispo.dispatch.map.core.IRoutingController;
 import ch.minova.dispo.dispatch.model.DispoModelCache;
 import ch.minova.dispo.dispatch.model.IGeocoded;
-import ch.minova.dispo.dispatch.model.consumption.StationTankQuantityCalculator;
+import ch.minova.dispo.dispatch.model.consumption.StationTankCalculator;
 import ch.minova.dispo.dispatch.model.dto.Address;
 import ch.minova.dispo.dispatch.model.dto.OpenDeliveryBean;
 import ch.minova.dispo.dispatch.model.dto.Remarks;
@@ -1677,7 +1677,8 @@ public class MapControl implements IMapControl {
 		if (shipment.isShipment()) {
 			quantity = shipment.getQuantity();
 		} else {
-			quantity = StationTankQuantityCalculator.getPossibleDeliveryQuantity((StationTank) shipment, scheduledDate);
+			StationTankCalculator stc = new StationTankCalculator((StationTank) shipment);
+			quantity = stc.getPossibleDeliveryQuantity(scheduledDate, true, false);
 		}
 		builder.append(quantity);
 
