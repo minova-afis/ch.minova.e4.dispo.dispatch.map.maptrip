@@ -86,6 +86,7 @@ import ch.minova.dispo.dispatch.model.dto.Address;
 import ch.minova.dispo.dispatch.model.dto.OpenDeliveryBean;
 import ch.minova.dispo.dispatch.model.dto.Remarks;
 import ch.minova.dispo.dispatch.model.dto.Shipment;
+import ch.minova.dispo.dispatch.model.dto.StationTank;
 import ch.minova.dispo.dispatch.model.dto.Trip;
 import ch.minova.dispo.dispatch.model.dto.TruckPool;
 import ch.minova.dispo.dispatch.model.dto.Vehicle;
@@ -1674,9 +1675,9 @@ public class MapControl implements IMapControl {
 
 		Integer quantity;
 		if (shipment.isShipment()) {
-			quantity = ((Shipment) shipment).getQuantity();
+			quantity = shipment.getQuantity();
 		} else {
-			quantity = StationTankQuantityCalculator.getPossibleDeliveryQuantity(shipment, scheduledDate);
+			quantity = StationTankQuantityCalculator.getPossibleDeliveryQuantity((StationTank) shipment, scheduledDate);
 		}
 		builder.append(quantity);
 
