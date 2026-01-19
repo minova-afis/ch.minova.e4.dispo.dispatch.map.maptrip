@@ -1510,8 +1510,8 @@ public class MapControl implements IMapControl {
 					item.setImage(Activator.getImageRegistry().get(MapImageConstants.MAPIMAGES_TRUCK_SMALL));
 				}
 				Object o = prov.getInfos().get("");
-				if (o instanceof Shipment) {
-					Shipment shipment = ((Shipment) o);
+				if (o instanceof OpenDeliveryBean) {
+					OpenDeliveryBean shipment = ((OpenDeliveryBean) o);
 					prov.getInfos().put(ShipmentInfos.ADDRESS.name(), shipment.getAddressInfo());
 					prov.getInfos().put(ShipmentInfos.TOOLTIP_TEXT.name(), getToolTipInfo(shipment));
 				}
