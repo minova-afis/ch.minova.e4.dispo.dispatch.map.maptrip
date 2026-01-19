@@ -743,6 +743,10 @@ public class MapControl implements IMapControl {
 	@Preference(nodePath = Activator.PLUGIN_ID, value = PreferenceIDs.MAP_ZOOM_LATITUDE)
 	private int mapZoomLatitude = 5000;
 
+	@Inject
+	@Preference(nodePath = ch.minova.e4.dispo.dispatch.Activator.PLUGIN_ID, value = ch.minova.e4.dispo.dispatch.preferences.PreferenceIDs.POSSIBLE_QUANTITIES_RECOGNISE_SCHEDULED_SHIPMENTS)
+	private boolean possibleQuantitiesRecogniseScheduledShipments;
+
 	private String itemGroupFilter;
 	private String orderReceiverFilter;
 
@@ -1678,7 +1682,7 @@ public class MapControl implements IMapControl {
 			quantity = shipment.getQuantity();
 		} else {
 			StationTankCalculator stc = new StationTankCalculator((StationTank) shipment);
-			quantity = stc.getPossibleDeliveryQuantity(scheduledDate, true, false);
+			quantity = stc.getPossibleDeliveryQuantity(scheduledDate, true, possibleQuantitiesRecogniseScheduledShipments);
 		}
 		builder.append(quantity);
 
