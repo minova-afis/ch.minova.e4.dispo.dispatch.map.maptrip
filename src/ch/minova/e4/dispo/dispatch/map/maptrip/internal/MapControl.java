@@ -1,4 +1,4 @@
-package ch.minova.e4.dispo.dispatch.map.infoware.internal;
+package ch.minova.e4.dispo.dispatch.map.maptrip.internal;
 
 import java.text.NumberFormat;
 import java.time.LocalDate;
