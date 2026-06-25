@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="MapControlFactory">
-   <implementation class="ch.minova.e4.dispo.dispatch.map.maptrip.internal.MapControl"/>
+   <implementation class="ch.minova.e4.dispo.dispatch.map.maptrip.internal.MapTripMapControl"/>
    <service>
    		<provide interface="ch.minova.e4.dispo.dispatch.map.ui.IMapControl"/>
    </service>
